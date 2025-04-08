@@ -1,0 +1,78 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Property Owner Details</h2>
+        <a href="{% url 'accounts:superadmin_dashboard' %}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Dashboard
+        </a>
+    </div>
+
+    <!-- Owner Information Card -->
+    <div class="card shadow mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Owner Information</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>Name:</strong> {{ owner.user.get_full_name }}</p>
+                    <p><strong>Email:</strong> {{ owner.user.email }}</p>
+                    <p><strong>Phone:</strong> {{ owner.phone_number }}</p>
+                    <p><strong>Address:</strong> {{ owner.address }}</p>
+                </div>
+                <div class="col-md-6">
+                    <p><strong>Registration Date:</strong> {{ owner.user.date_joined|date:"F d, Y" }}</p>
+                    <p>
+                        <strong>Verification Status:</strong>
+                        {% if owner.verification_status %}
+                        <span class="badge bg-success">Verified</span>
+                        {% else %}
+                        <span class="badge bg-warning">Pending</span>
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Properties Card -->
+    <div class="card shadow">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Properties</h5>
+        </div>
+        <div class="card-body">
+            {% if properties %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Title</th>
+                            <th>Address</th>
+                            <th>Type</th>
+                            <th>Units</th>
+                            <th>Active Leases</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for property in properties %}
+                        <tr>
+                            <td>{{ property.title }}</td>
+                            <td>{{ property.address }}</td>
+                            <td>{{ property.property_type }}</td>
+                            <td>{{ property.units.count }}</td>
+                            <td>{{ property.leaseagreement_set.count }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="text-center mb-0">No properties found.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,152 @@
+{% extends 'base.html' %}
+
+{% block title %}Payment Details - RMS{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white py-3">
+                <h4 class="mb-0">Payment Details</h4>
+            </div>
+            <div class="card-body p-4">
+                <!-- Payment Status -->
+                <div class="alert alert-{{ payment.status|lower }} mb-4">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-{% if payment.status == 'PAID' %}check-circle{% elif payment.status == 'PENDING' %}clock{% else %}exclamation-circle{% endif %} fa-2x me-3"></i>
+                        <div>
+                            <h5 class="alert-heading mb-1">Payment {{ payment.status|title }}</h5>
+                            <p class="mb-0">Transaction ID: {{ payment.transaction_id }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Payment Information -->
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <h5 class="mb-3">Payment Information</h5>
+                        <ul class="list-unstyled">
+                            <li class="mb-2">
+                                <strong>Amount:</strong> ${{ payment.amount }}
+                            </li>
+                            <li class="mb-2">
+                                <strong>Payment Date:</strong> {{ payment.payment_date|date:"F d, Y" }}
+                            </li>
+                            <li class="mb-2">
+                                <strong>Payment Method:</strong> {{ payment.get_payment_method_display }}
+                            </li>
+                            <li class="mb-2">
+                                <strong>Reference:</strong> {{ payment.reference_number }}
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h5 class="mb-3">Property Details</h5>
+                        <ul class="list-unstyled">
+                            <li class="mb-2">
+                                <strong>Property:</strong> {{ payment.lease.property.title }}
+                            </li>
+                            <li class="mb-2">
+                                <strong>Address:</strong> {{ payment.lease.property.address }}
+                            </li>
+                            <li class="mb-2">
+                                <strong>Tenant:</strong> {{ payment.lease.tenant.user.get_full_name }}
+                            </li>
+                            <li class="mb-2">
+                                <strong>Lease Period:</strong> {{ payment.lease.start_date|date:"M d, Y" }} - {{ payment.lease.end_date|date:"M d, Y" }}
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Payment Breakdown -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">Payment Breakdown</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table">
+                                <tbody>
+                                    <tr>
+                                        <td>Monthly Rent</td>
+                                        <td class="text-end">${{ payment.lease.rent_amount }}</td>
+                                    </tr>
+                                    {% if payment.late_fee %}
+                                    <tr>
+                                        <td>Late Fee</td>
+                                        <td class="text-end">${{ payment.late_fee }}</td>
+                                    </tr>
+                                    {% endif %}
+                                    {% if payment.utilities_amount %}
+                                    <tr>
+                                        <td>Utilities</td>
+                                        <td class="text-end">${{ payment.utilities_amount }}</td>
+                                    </tr>
+                                    {% endif %}
+                                    {% if payment.other_charges %}
+                                    <tr>
+                                        <td>Other Charges</td>
+                                        <td class="text-end">${{ payment.other_charges }}</td>
+                                    </tr>
+                                    {% endif %}
+                                    <tr class="table-active fw-bold">
+                                        <td>Total Amount</td>
+                                        <td class="text-end">${{ payment.amount }}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Actions -->
+                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                    {% if user.is_property_owner %}
+                        {% if payment.status == 'PENDING' %}
+                            <button class="btn btn-success me-2" data-bs-toggle="modal" data-bs-target="#confirmPaymentModal">
+                                <i class="fas fa-check"></i> Confirm Payment
+                            </button>
+                        {% endif %}
+                        <a href="{% url 'payments:generate_receipt' payment.id %}" class="btn btn-outline-primary me-2">
+                            <i class="fas fa-file-pdf"></i> Generate Receipt
+                        </a>
+                    {% endif %}
+                    {% if user.is_tenant and payment.status == 'PENDING' %}
+                        <a href="{% url 'payments:make_payment' payment.id %}" class="btn btn-primary">
+                            <i class="fas fa-credit-card"></i> Make Payment
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Confirm Payment Modal -->
+{% if user.is_property_owner and payment.status == 'PENDING' %}
+<div class="modal fade" id="confirmPaymentModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirm Payment</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to confirm this payment?</p>
+                <p class="mb-0"><strong>Amount:</strong> ${{ payment.amount }}</p>
+                <p class="mb-0"><strong>Tenant:</strong> {{ payment.lease.tenant.user.get_full_name }}</p>
+                <p><strong>Reference:</strong> {{ payment.reference_number }}</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form method="post" action="{% url 'payments:confirm_payment' payment.id %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-success">Confirm Payment</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,192 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Tenant Dashboard - Rental Management System{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Overview Stats -->
+    <div class="row">
+        <div class="col-xl-4 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Active Leases</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ lease_agreements.count }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-file-contract fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-4 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                Pending Payments</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ pending_payments }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-clock fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-4 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Total Payments Made</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ payments.count }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-check-circle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Payments -->
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-primary">Recent Payments</h6>
+                    <a href="{% url 'properties:invoice_list' %}" class="btn btn-sm btn-primary">View All</a>
+                </div>
+                <div class="card-body">
+                    {% if invoices %}
+                        <div class="table-responsive">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Invoice #</th>
+                                        <th>Amount</th>
+                                        <th>Status</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for invoice in invoices %}
+                                    <tr>
+                                        <td>{{ invoice.invoice_number }}</td>
+                                        <td>${{ invoice.amount }}</td>
+                                        <td>
+                                            <span class="badge {% if invoice.status == 'paid' %}bg-success{% elif invoice.status == 'pending' %}bg-warning{% else %}bg-danger{% endif %}">
+                                                {{ invoice.status|title }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            {% if invoice.status == 'paid' %}
+                                                <a href="#" class="btn btn-sm btn-success disabled">
+                                                    <i class="fas fa-check"></i> Paid
+                                                </a>
+                                            {% else %}
+                                                <a href="{% url 'properties:tenant_make_payment' pk=invoice.id %}" class="btn btn-sm btn-primary">
+                                                    <i class="fas fa-money-bill"></i> Pay Now
+                                                </a>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="text-center mb-0">No recent payments found.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Upcoming Payments -->
+        <div class="col-lg-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Upcoming Payments</h6>
+                </div>
+                <div class="card-body">
+                    <div class="list-group">
+                        {% for payment in payments %}
+                        {% if payment.status == 'PENDING' and payment.due_date|date:"Y-m-d" >= now|date:"Y-m-d" %}
+                        <div class="list-group-item list-group-item-action">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1">{{ payment.payment_type }}</h6>
+                                <small class="text-danger">Due {{ payment.due_date|date:"M d" }}</small>
+                            </div>
+                            <p class="mb-1">{{ payment.lease_agreement.property.name }}</p>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <small class="text-success">${{ payment.amount }}</small>
+                                <a href="{% url 'payments:make_payment' payment.id %}" class="btn btn-sm btn-success">
+                                    Pay Now
+                                </a>
+                            </div>
+                        </div>
+                        {% endif %}
+                        {% empty %}
+                        <div class="text-center text-muted py-3">
+                            <i class="fas fa-check-circle mb-2"></i>
+                            <p>No upcoming payments</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_css %}
+<style>
+    .border-left-primary {
+        border-left: .25rem solid #4e73df!important;
+    }
+    .border-left-success {
+        border-left: .25rem solid #1cc88a!important;
+    }
+    .border-left-warning {
+        border-left: .25rem solid #f6c23e!important;
+    }
+    
+    .lease-agreement {
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    
+    .lease-agreement:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    
+    .list-group-item {
+        border-left: none;
+        border-right: none;
+    }
+    
+    .list-group-item:first-child {
+        border-top: none;
+    }
+    
+    .list-group-item:last-child {
+        border-bottom: none;
+    }
+    
+    .badge {
+        font-weight: 500;
+        padding: 0.5em 0.75em;
+    }
+</style>
+{% endblock %}
+{% endblock %}

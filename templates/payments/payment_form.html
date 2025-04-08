@@ -1,0 +1,141 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}{% if form.instance.pk %}Edit{% else %}Create{% endif %} Payment - RMS{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white py-3">
+                <h4 class="mb-0">{% if form.instance.pk %}Edit{% else %}Create{% endif %} Payment</h4>
+            </div>
+            <div class="card-body p-4">
+                <form method="post" enctype="multipart/form-data" novalidate>
+                    {% csrf_token %}
+                    
+                    <!-- Lease Information -->
+                    {% if not form.instance.pk %}
+                        <div class="card mb-4">
+                            <div class="card-body">
+                                <h5 class="card-title">Lease Information</h5>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <p><strong>Property:</strong> {{ lease.property.title }}</p>
+                                        <p><strong>Tenant:</strong> {{ lease.tenant.user.get_full_name }}</p>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <p><strong>Monthly Rent:</strong> ${{ lease.rent_amount }}</p>
+                                        <p><strong>Due Date:</strong> {{ lease.payment_due_day }} of each month</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
+
+                    <!-- Payment Details -->
+                    <h5 class="mb-4">Payment Details</h5>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            {{ form.amount|crispy }}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            {{ form.payment_date|crispy }}
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            {{ form.payment_method|crispy }}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            {{ form.payment_type|crispy }}
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        {{ form.reference_number|crispy }}
+                    </div>
+
+                    <!-- Additional Charges -->
+                    <h5 class="mb-4 mt-4">Additional Charges</h5>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            {{ form.late_fee|crispy }}
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            {{ form.utilities_amount|crispy }}
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            {{ form.other_charges|crispy }}
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        {{ form.notes|crispy }}
+                    </div>
+
+                    <!-- Documents -->
+                    <h5 class="mb-4 mt-4">Supporting Documents</h5>
+                    <div class="mb-4">
+                        {{ form.documents|crispy }}
+                    </div>
+
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{% url 'payments:payment_create_view' %}" class="btn btn-outline-secondary me-2">
+                            Cancel
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            {% if form.instance.pk %}Update{% else %}Create{% endif %} Payment
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Auto-calculate total amount
+    function calculateTotal() {
+        const amount = parseFloat(document.getElementById('id_amount').value) || 0;
+        const lateFee = parseFloat(document.getElementById('id_late_fee').value) || 0;
+        const utilities = parseFloat(document.getElementById('id_utilities_amount').value) || 0;
+        const otherCharges = parseFloat(document.getElementById('id_other_charges').value) || 0;
+        
+        const total = amount + lateFee + utilities + otherCharges;
+        document.getElementById('id_amount').value = total.toFixed(2);
+    }
+
+    // Add event listeners to all charge fields
+    document.getElementById('id_late_fee').addEventListener('change', calculateTotal);
+    document.getElementById('id_utilities_amount').addEventListener('change', calculateTotal);
+    document.getElementById('id_other_charges').addEventListener('change', calculateTotal);
+
+    // Payment method specific fields
+    document.getElementById('id_payment_method').addEventListener('change', function(e) {
+        const referenceField = document.getElementById('id_reference_number');
+        const method = e.target.value;
+        
+        switch(method) {
+            case 'CARD':
+                referenceField.placeholder = 'Enter last 4 digits of card';
+                break;
+            case 'BANK':
+                referenceField.placeholder = 'Enter bank transaction ID';
+                break;
+            case 'CHECK':
+                referenceField.placeholder = 'Enter check number';
+                break;
+            default:
+                referenceField.placeholder = 'Enter reference number';
+        }
+    });
+
+    // Initialize datepicker for payment date
+    flatpickr("#id_payment_date", {
+        enableTime: false,
+        dateFormat: "Y-m-d",
+        defaultDate: "today"
+    });
+</script>
+{% endblock %}

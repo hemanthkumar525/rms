@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Add Payment Account - RMS{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card shadow">
+        <div class="card-header bg-primary text-white">
+            <h4 class="mb-0">Add Payment Account</h4>
+            <button type="button" class="btn-close float-end" aria-label="Close"></button>
+        </div>
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+                
+                <div class="mb-3">
+                    <label for="{{ form.title.id_for_label }}" class="form-label">Title</label>
+                    {{ form.title }}
+                </div>
+
+                <div class="mb-3">
+                    <label for="{{ form.account_type.id_for_label }}" class="form-label">Account Type</label>
+                    {{ form.account_type }}
+                </div>
+
+                <div class="mb-3">
+                    <label for="{{ form.status.id_for_label }}" class="form-label">Status</label>
+                    {{ form.status }}
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Account Mode</label>
+                    <div class="d-flex gap-3">
+                        {% for radio in form.account_mode %}
+                        <div class="form-check">
+                            {{ radio.tag }}
+                            <label class="form-check-label" for="{{ radio.id_for_label }}">
+                                {{ radio.choice_label }}
+                            </label>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="{{ form.client_id.id_for_label }}" class="form-label">Account Client ID</label>
+                    {{ form.client_id }}
+                </div>
+
+                <div class="mb-3">
+                    <label for="{{ form.secret_key.id_for_label }}" class="form-label">Account Secret Key</label>
+                    {{ form.secret_key }}
+                </div>
+
+                <div class="text-end">
+                    <button type="submit" class="btn btn-primary">Create</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

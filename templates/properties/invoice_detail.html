@@ -1,0 +1,143 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Invoice {{ invoice.invoice_number }} - RMS{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row mb-4">
+        <div class="col">
+            <div class="d-flex justify-content-between align-items-start mb-4">
+                <div class="logo-section">
+                    <img src="{% static 'img/logo.jpeg' %}" alt="RMS Logo" style="width: 150px; height: auto;">
+                    <div class="company-address mt-2">
+                        <strong>Rental Management System</strong><br>
+                        123 Business Street<br>
+                        City, State 12345<br>
+                        Phone: (555) 123-4567<br>
+                        Email: support@rms.com
+                    </div>
+                </div>
+                <div class="text-end">
+                    <h1 class="h2 mb-0">INVOICE</h1>
+                    <p class="mb-1">#{{ invoice.invoice_number }}</p>
+                    <p class="text-muted mb-0">Issue Date: {{ invoice.issue_date|date:"M d, Y" }}</p>
+                    <p class="text-muted">Due Date: {{ invoice.due_date|date:"M d, Y" }}</p>
+                </div>
+            </div>
+            
+            <div class="text-end mt-3">
+                {% if request.user.is_property_owner and invoice.property.owner.user == request.user %}
+                    <div class="btn-group">
+                        <a href="{% url 'properties:download_invoice' pk=invoice.id %}" class="btn btn-primary">
+                            <i class="fas fa-download"></i> Download
+                        </a>
+                    </div>
+                    <a href="{% url 'properties:invoice_update' pk=invoice.id %}" class="btn btn-warning">
+                        <i class="fas fa-edit"></i> Edit Invoice
+                    </a>
+                    {% if invoice.status != 'paid' %}
+                        <a href="{% url 'properties:mark_invoice_paid' pk=invoice.id %}" class="btn btn-success">
+                            <i class="fas fa-check"></i> Mark as Paid
+                        </a>
+                    {% endif %}
+                {% elif request.user.is_tenant and invoice.tenant.user == request.user and invoice.status != 'paid' %}
+                    <a href="{% url 'properties:tenant_make_payment' pk=invoice.id %}" class="btn btn-primary">
+                        <i class="fas fa-money-bill"></i> Make Payment
+                    </a>
+                {% endif %}
+                <a href="{% url 'properties:invoice_list' %}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Back to List
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Invoice Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <p><strong>Status:</strong><br>
+                                <span class="badge {% if invoice.status == 'paid' %}bg-success{% elif invoice.status == 'pending' %}bg-warning{% elif invoice.status == 'overdue' %}bg-danger{% else %}bg-secondary{% endif %}">
+                                    {{ invoice.status|title }}
+                                </span>
+                            </p>
+                            <p><strong>Payment Type:</strong><br>{{ invoice.get_payment_type_display }}</p>
+                            {% if invoice.payment_date %}
+                                <p><strong>Payment Date:</strong><br>{{ invoice.payment_date|date:"M d, Y" }}</p>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Property:</strong><br>{{ invoice.property.title }}</p>
+                            <p><strong>Unit:</strong><br>{{ invoice.lease_agreement.property_unit.unit_number }}</p>
+                            <p><strong>Tenant:</strong><br>{{ invoice.tenant.user.get_full_name }}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-12">
+                            <h6>Description</h6>
+                            <p>{{ invoice.description|default:"No description provided." }}</p>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-12">
+                            <table class="table table-bordered">
+                                <tr>
+                                    <th>Amount:</th>
+                                    <td class="text-end">₹{{ invoice.amount }}</td>
+                                </tr>
+                                {% if invoice.late_fee > 0 %}
+                                <tr>
+                                    <th>Late Fee:</th>
+                                    <td class="text-end">₹{{ invoice.late_fee }}</td>
+                                </tr>
+                                {% endif %}
+                                <tr class="table-active">
+                                    <th>Total Amount:</th>
+                                    <td class="text-end"><strong>₹{{ invoice.total_amount }}</strong></td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Related Documents</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <h6>Lease Agreement</h6>
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'properties:get_lease_details' lease_id=invoice.lease_agreement.id %}" class="btn btn-outline-primary btn-sm" target="_blank">
+                                <i class="fas fa-file-contract"></i> View Lease Agreement
+                            </a>
+                            <a href="{% url 'properties:download_lease' pk=invoice.lease_agreement.id %}" class="btn btn-outline-secondary btn-sm">
+                                <i class="fas fa-download"></i> Download Lease
+                            </a>
+                        </div>
+                    </div>
+                    
+                    {% if invoice.bank_account %}
+                    <div class="mt-3">
+                        <h6>Bank Account Details</h6>
+                        <p class="mb-1"><strong>Bank:</strong> {{ invoice.bank_account.bank_name }}</p>
+                        <p class="mb-1"><strong>Account:</strong> {{ invoice.bank_account.account_number }}</p>
+                        <p class="mb-0"><strong>IFSC:</strong> {{ invoice.bank_account.ifsc_code }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

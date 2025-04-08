@@ -1,0 +1,103 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Property Managers{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="mb-0">
+            <i class="fas fa-user-tie text-primary me-2"></i>Property Managers
+        </h2>
+        <a href="{% url 'properties:property_manager_create' %}" class="btn btn-primary">
+            <i class="fas fa-plus-circle me-2"></i>Add New Manager
+        </a>
+    </div>
+
+    {% if managers %}
+        <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-4">
+            {% for manager in managers %}
+                <div class="col animate__animated animate__fadeIn" style="animation-delay: 100ms">
+                    <div class="card h-100 border-0 shadow-lg hover-lift">
+                        <div class="card-body p-4">
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="flex-shrink-0">
+                                    <div class="avatar avatar-lg rounded-circle bg-primary-soft">
+                                        <i class="fas fa-user-tie fa-lg text-primary"></i>
+                                    </div>
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <h5 class="mb-1">{{ manager.user.get_full_name }}</h5>
+                                    <p class="text-muted mb-0">{{ manager.user.email }}</p>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <h6 class="text-muted mb-2">Assigned Properties</h6>
+                                <div class="d-flex flex-wrap gap-2">
+                                    {% for property in manager.assigned_properties.all %}
+                                        <span class="badge bg-primary-soft text-primary">
+                                            {{ property.title }}
+                                        </span>
+                                    {% endfor %}
+                                </div>
+                            </div>
+
+                            <div class="d-flex justify-content-between align-items-center mt-4">
+                                <small class="text-muted">
+                                    Added {{ manager.created_at|date:"M d, Y" }}
+                                </small>
+                                <div class="btn-group">
+                                    <a href="{% url 'properties:property_manager_edit' manager.pk %}" 
+                                       class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-edit me-1"></i>Edit
+                                    </a>
+                                    <button type="button" 
+                                            class="btn btn-sm btn-outline-danger" 
+                                            data-bs-toggle="modal" 
+                                            data-bs-target="#deleteModal{{ manager.pk }}">
+                                        <i class="fas fa-trash-alt me-1"></i>Delete
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Delete Modal -->
+                <div class="modal fade" id="deleteModal{{ manager.pk }}" tabindex="-1">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">Confirm Delete</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                                Are you sure you want to delete {{ manager.user.get_full_name }}? This action cannot be undone.
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                <form action="{% url 'properties:property_manager_delete' manager.pk %}" method="post" class="d-inline">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-danger">Delete</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="text-center py-5">
+            <div class="mb-3">
+                <i class="fas fa-user-tie fa-3x text-muted"></i>
+            </div>
+            <h4 class="text-muted">No Property Managers Found</h4>
+            <p class="text-muted mb-4">Start by adding your first property manager</p>
+            <a href="{% url 'properties:property_manager_create' %}" class="btn btn-primary">
+                <i class="fas fa-plus-circle me-2"></i>Add New Manager
+            </a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

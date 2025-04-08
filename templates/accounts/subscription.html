@@ -1,0 +1,139 @@
+{% extends 'base_no_sidebar.html' %}
+{% load static %}
+
+{% block title %}Subscription Plans{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center mb-4">
+        <div class="col-md-8 text-center">
+            <h2 class="fw-bold mb-3">Choose Your Plan</h2>
+            <p class="text-muted">Select the plan that best suits your business needs</p>
+        </div>
+    </div>
+
+    <div class="row justify-content-center g-4">
+        {% for plan_id, plan in subscription_plans.items %}
+        <div class="col-md-4">
+            <div class="card h-100 border-0 shadow-lg hover-shadow {% if selected_subscription_id == plan.id %}border border-primary{% endif %}">
+                <div class="card-header {% if selected_subscription_id == plan.id %}bg-primary{% else %}bg-light{% endif %} text-{% if selected_subscription_id == plan.id %}white{% else %}dark{% endif %} text-center py-4">
+                    <h3 class="h4 mb-0">{{ plan.name }}</h3>
+                    {% if selected_subscription_id == plan.id %}
+                    <span class="badge bg-primary text-white mt-2">Selected Plan</span>
+                    {% endif %}
+                </div>
+                <div class="card-body p-4">
+                    <div class="text-center mb-4">
+                        <h4 class="display-5 fw-bold">₹{{ plan.price }}</h4>
+                        <span class="text-muted">per {{ plan.duration_months }} months</span>
+                    </div>
+                    
+                    <ul class="list-unstyled">
+                        <li class="mb-3">
+                            <i class="fas fa-check text-success me-2"></i>
+                            Up to {{ plan.max_properties }} Properties
+                        </li>
+                        <li class="mb-3">
+                            <i class="fas fa-check text-success me-2"></i>
+                            Up to {{ plan.max_units }} Units per Property
+                        </li>
+                        <li class="mb-3">
+                            <i class="fas fa-check text-success me-2"></i>
+                            {{ plan.description }}
+                        </li>
+                    </ul>
+                </div>
+                <div class="card-footer bg-transparent text-center p-4">
+                    <button class="btn {% if selected_subscription_id == plan.id %}btn-primary{% else %}btn-outline-primary{% endif %} btn-lg w-100 subscribe-button" 
+                            data-price-id="{{ plan.price_id }}"
+                            {% if not user.propertyowner %}disabled{% endif %}>
+                        {% if selected_subscription_id == plan.id %}
+                        Proceed with Payment
+                        {% else %}
+                        Subscribe Now
+                        {% endif %}
+                    </button>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Payment Processing Modal -->
+<div class="modal fade" id="paymentModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-body text-center py-4">
+                <div class="spinner-border text-primary mb-3" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <h5>Processing your payment...</h5>
+                <p class="text-muted">Please don't close this window.</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://js.stripe.com/v3/"></script>
+<script>
+    const stripe = Stripe('{{ STRIPE_PUBLIC_KEY }}');
+    const buttons = document.querySelectorAll('.subscribe-button');
+    const paymentModal = new bootstrap.Modal(document.getElementById('paymentModal'));
+
+    buttons.forEach(button => {
+        button.addEventListener('click', async (e) => {
+            const priceId = e.target.dataset.priceId;
+            button.disabled = true;
+            paymentModal.show();
+
+            try {
+                const response = await fetch(`{% url 'accounts:subscription' %}?price_id=${priceId}`);
+                const data = await response.json();
+                
+                if (data.sessionId) {
+                    const result = await stripe.redirectToCheckout({
+                        sessionId: data.sessionId
+                    });
+                    
+                    if (result.error) {
+                        throw new Error(result.error.message);
+                    }
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An error occurred. Please try again.');
+                button.disabled = false;
+                paymentModal.hide();
+            }
+        });
+    });
+</script>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .hover-shadow {
+        transition: all 0.3s ease;
+    }
+    .hover-shadow:hover {
+        transform: translateY(-5px);
+    }
+    .card {
+        border-radius: 15px;
+        overflow: hidden;
+    }
+    .card-header {
+        border-bottom: none;
+    }
+    .display-5 {
+        font-size: 2.5rem;
+    }
+    .btn-lg {
+        padding: 1rem 2rem;
+        font-size: 1.1rem;
+    }
+</style>
+{% endblock %}

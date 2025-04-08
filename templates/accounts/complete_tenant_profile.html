@@ -1,0 +1,102 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block title %}Complete Tenant Profile - Rental Management System{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-body p-4">
+                    <div class="text-center mb-4">
+                        <i class="fas fa-home fa-3x text-primary mb-3"></i>
+                        <h2>Complete Your Tenant Profile</h2>
+                        <p class="text-muted">Please provide your details to start managing your rental agreements</p>
+                    </div>
+
+                    <form method="post" class="profile-form" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        
+                        <div class="alert alert-info mb-4">
+                            <i class="fas fa-info-circle me-2"></i>
+                            Your emergency contact information will only be used in case of emergencies.
+                            Employment information helps property owners verify your rental application.
+                        </div>
+
+                        <div class="row">
+                            <div class="col-12">
+                                <h5 class="mb-3">Emergency Contact</h5>
+                            </div>
+                            {{ form.emergency_contact|crispy }}
+                        </div>
+
+                        <div class="row mt-4">
+                            <div class="col-12">
+                                <h5 class="mb-3">Employment Information</h5>
+                            </div>
+                            {{ form.employment_info|crispy }}
+                        </div>
+
+                        <div class="row mt-4">
+                            <div class="col-12">
+                                <h5 class="mb-3">Identity Verification</h5>
+                                <div class="alert alert-warning">
+                                    <i class="fas fa-shield-alt me-2"></i>
+                                    Please upload a valid government-issued ID for verification.
+                                    This helps ensure the security of all tenants and property owners.
+                                </div>
+                            </div>
+                            {{ form.id_proof|crispy }}
+                        </div>
+
+                        <div class="d-grid gap-2 mt-4">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                Complete Profile
+                            </button>
+                            <a href="{% url 'accounts:select_user_type' %}" class="btn btn-outline-secondary">
+                                Back to Role Selection
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="text-center mt-4">
+                <p class="text-muted">
+                    <small>
+                        By completing this profile, you agree to our 
+                        <a href="#">Terms of Service</a> and 
+                        <a href="#">Privacy Policy</a>
+                    </small>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_css %}
+<style>
+    .profile-form .form-group {
+        margin-bottom: 1.5rem;
+    }
+    
+    .profile-form label {
+        font-weight: 500;
+    }
+    
+    .profile-form .form-text {
+        color: #6c757d;
+    }
+    
+    .btn-lg {
+        padding: 0.75rem 1.5rem;
+    }
+    
+    .alert {
+        border-radius: 10px;
+    }
+</style>
+{% endblock %}
+{% endblock %}

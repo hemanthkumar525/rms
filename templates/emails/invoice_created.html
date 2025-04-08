@@ -1,0 +1,15 @@
+{% extends 'emails/base_email.html' %}
+
+{% block content %}
+<h2>New Invoice Generated</h2>
+<p>Dear {{ invoice.tenant.user.get_full_name }},</p>
+<p>A new invoice has been generated for your rent:</p>
+<ul>
+    <li>Invoice Number: {{ invoice.invoice_number }}</li>
+    <li>Amount: ${{ invoice.amount }}</li>
+    <li>Due Date: {{ invoice.due_date|date:"M d, Y" }}</li>
+    <li>Property: {{ invoice.property.title }}</li>
+</ul>
+<p>Please ensure timely payment to avoid late fees.</p>
+<p>Best regards,<br>RMS Team</p>
+{% endblock %}

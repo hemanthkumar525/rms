@@ -1,0 +1,236 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block extra_css %}
+<link href="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.css" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Overall Property Portfolio Analytics</h2>
+    
+    <!-- Summary Cards -->
+    <div class="row mt-4">
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Properties</h5>
+                    <p class="card-text display-4"><h4>{{ total_properties }}</h4></p>
+                    <small class="text-muted">Total properties in portfolio</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Overall Occupancy</h5>
+                    <p class="card-text display-4"><h4>{{ overall_occupancy }}%</h4></p>
+                    <small class="text-muted">{{ total_occupied_units }} of {{ total_units }} units</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Average Rent</h5>
+                    <p class="card-text display-4"><h4>${{ overall_avg_rent }}</h4></p>
+                    <small class="text-muted">Portfolio-wide average</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Total Tenants</h5>
+                    <p class="card-text display-4"><h4>{{ total_tenants }}</h4></p>
+                    <small class="text-muted">Active tenants</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Rent Trends</h5>
+                    <div style="height: 300px;">
+                        <canvas id="rentTrendChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Revenue Trends</h5>
+                    <div style="height: 300px;">
+                        <canvas id="revenueTrendChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Top Performers>
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Best Performing Properties</h5>
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Property</th>
+                                    <th>Monthly Revenue</th>
+                                    <th>Occupancy</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for prop in best_performing %}
+                                <tr>
+                                    <td>{{ prop.name }}</td>
+                                    <td>${{ prop.analytics.monthly_revenue }}</td>
+                                    <td>{{ prop.analytics.occupancy_rate }}%</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div-->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Highest Occupancy Properties</h5>
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Property</th>
+                                    <th>Occupancy</th>
+                                    <th>Units Occupied</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for prop in highest_occupancy %}
+                                <tr>
+                                    <td>{{ prop.name }}</td>
+                                    <td>{{ prop.analytics.occupancy_rate }}%</td>
+                                    <td>{{ prop.analytics.occupied_units }}/{{ prop.analytics.total_units }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.js"></script>
+<style>
+    .chart-container {
+        position: relative;
+        height: 100%;
+        width: 100%;
+    }
+</style>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Rent Trend Chart
+    var rentCtx = document.getElementById('rentTrendChart').getContext('2d');
+    var rentChartData = {
+        dates: {{ revenue_chart_data.dates|safe }},
+        amounts: {{ revenue_chart_data.amounts|safe }}
+    };
+    
+    new Chart(rentCtx, {
+        type: 'line',
+        data: {
+            labels: rentChartData.dates,
+            datasets: [{
+                label: 'Average Monthly Rent',
+                data: rentChartData.rents,
+                borderColor: '#96351e',
+                tension: 0.1,
+                fill: false
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'top'
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Rent Amount ($)'
+                    },
+                    ticks: {
+                        callback: function(value, index, values) {
+                            return '$' + value.toLocaleString();
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+    // Revenue Trend Chart
+    var revenueCtx = document.getElementById('revenueTrendChart').getContext('2d');
+    var revenueChartData = {
+        dates: {{ revenue_chart_data.dates|safe }},
+        amounts: {{ revenue_chart_data.amounts|safe }}
+    };
+    
+    new Chart(revenueCtx, {
+        type: 'bar',
+        data: {
+            labels: revenueChartData.dates,
+            datasets: [{
+                label: 'Monthly Revenue',
+                data: revenueChartData.amounts,
+                backgroundColor: '#96351e',
+                borderColor: '#cb9800',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'top'
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Revenue ($)'
+                    },
+                    ticks: {
+                        callback: function(value, index, values) {
+                            return '$' + value.toLocaleString();
+                        }
+                    }
+                }
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

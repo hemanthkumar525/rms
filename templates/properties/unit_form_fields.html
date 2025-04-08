@@ -1,0 +1,18 @@
+{% load crispy_forms_tags %}
+
+{% if is_commercial %}
+    <!-- Commercial Unit Form Fields -->
+    {{ form.unit_number|as_crispy_field }}
+    {{ form.monthly_rent|as_crispy_field }}
+    {{ form.square_feet|as_crispy_field }}
+    {{ form.business_type|as_crispy_field }}
+    {{ form.is_available|as_crispy_field}}
+{% else %}
+    <!-- Residential Unit Form Fields -->
+    {{ form.unit_number|as_crispy_field }}
+    {{ form.monthly_rent|as_crispy_field }}
+    {{ form.bedrooms|as_crispy_field }}
+    {{ form.bathrooms|as_crispy_field }}
+    {{ form.square_feet|as_crispy_field }}
+    {{ form.is_available|as_crispy_field }}
+{% endif %}

@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-danger text-white">
+                    <h4>Delete Property</h4>
+                </div>
+                <div class="card-body">
+                    <p class="lead">Are you sure you want to delete the property "{{ property.name }}"?</p>
+                    <p class="text-muted">This action cannot be undone. All associated data will be permanently removed.</p>
+                    <div class="mt-4">
+                        <form method="post" action="{% url 'properties:property_delete' property.pk %}">
+                            {% csrf_token %}
+                            <div class="d-flex justify-content-between">
+                                <a href="{% url 'properties:property_list' %}" class="btn btn-secondary">Cancel</a>
+                                <button type="submit" class="btn btn-danger">Delete Property</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,209 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Lease Agreements - RMS{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header Section -->
+    <div class="row mb-4 animate__animated animate__fadeIn">
+        <div class="col-12">
+            <div class="d-sm-flex align-items-center justify-content-between">
+                <div>
+                    <h1 class="h3 mb-0 text-gray-800 fw-bold">
+                        <i class="fas fa-file-contract me-2 text-primary"></i>
+                        Lease Agreements
+                    </h1>
+                    <p class="text-muted mb-0">Manage and track all your lease agreements in one place.</p>
+                </div>
+                {% if user.is_property_owner %}
+                <div class="mt-3 mt-sm-0">
+                    
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Section -->
+    
+
+    <!-- Lease List -->
+    <div class="card border-0 shadow-lg animate__animated animate__fadeInUp" style="animation-delay: 200ms">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-light">
+                        <tr>
+                            <th class="border-0 ps-4">Property</th>
+                            <th class="border-0">Tenant</th>
+                            <th class="border-0">Duration</th>
+                            <th class="border-0">Rent</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for lease in leases %}
+                        <tr>
+                            <td class="ps-4">
+                                <div class="d-flex align-items-center">
+                                    {% if lease.property.images.first %}
+                                        <img src="{{ lease.property.images.first.image.url }}" 
+                                             class="rounded" alt="{{ lease.property.title }}"
+                                             style="width: 40px; height: 40px; object-fit: cover;">
+                                    {% else %}
+                                        <div class="bg-light rounded d-flex align-items-center justify-content-center"
+                                             style="width: 40px; height: 40px;">
+                                            <i class="fas fa-home text-muted"></i>
+                                        </div>
+                                    {% endif %}
+                                    <div class="ms-3">
+                                        <h6 class="mb-0">{{ lease.property.title }}</h6>
+                                        <small class="text-muted">{{ lease.property.address }}</small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="avatar avatar-sm bg-primary-soft rounded-circle">
+                                        <i class="fas fa-user text-primary"></i>
+                                    </div>
+                                    <div class="ms-3">
+                                        <h6 class="mb-0">{{ lease.tenant.user.get_full_name }}</h6>
+                                        <small class="text-muted">{{ lease.tenant.user.email }}</small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <div>
+                                    <h6 class="mb-0">{{ lease.start_date|date:"M d, Y" }}</h6>
+                                    <small class="text-muted">to {{ lease.end_date|date:"M d, Y" }}</small>
+                                </div>
+                            </td>
+                            <td>
+                                <h6 class="mb-0">${{ lease.monthly_rent }}/month</h6>
+                                <small class="text-muted">Due on {{ lease.rent_due_day }}</small>
+                            </td>
+                            
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center py-5">
+                                <div class="text-muted">
+                                    <i class="fas fa-file-contract fa-3x mb-3"></i>
+                                    <h5>No Lease Agreements Found</h5>
+                                    <p>No lease agreements match your search criteria.</p>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    {% if is_paginated %}
+    <nav aria-label="Page navigation" class="mt-4 animate__animated animate__fadeInUp" style="animation-delay: 300ms">
+        <ul class="pagination pagination-lg justify-content-center">
+            {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link hover-lift" href="?page={{ page_obj.previous_page_number }}">
+                        <i class="fas fa-chevron-left me-1"></i>Previous
+                    </a>
+                </li>
+            {% endif %}
+            
+            {% for num in page_obj.paginator.page_range %}
+                {% if page_obj.number == num %}
+                    <li class="page-item active">
+                        <span class="page-link">{{ num }}</span>
+                    </li>
+                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                    <li class="page-item">
+                        <a class="page-link hover-lift" href="?page={{ num }}">{{ num }}</a>
+                    </li>
+                {% endif %}
+            {% endfor %}
+            
+            {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link hover-lift" href="?page={{ page_obj.next_page_number }}">
+                        Next<i class="fas fa-chevron-right ms-1"></i>
+                    </a>
+                </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .bg-primary-soft { background-color: rgba(37, 99, 235, 0.1); }
+    .bg-success-soft { background-color: rgba(5, 150, 105, 0.1); }
+    .bg-warning-soft { background-color: rgba(217, 119, 6, 0.1); }
+    .bg-danger-soft { background-color: rgba(220, 38, 38, 0.1); }
+    
+    .avatar {
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .hover-lift {
+        transition: transform 0.2s ease;
+    }
+    
+    .hover-lift:hover {
+        transform: translateY(-2px);
+    }
+    
+    .table > :not(caption) > * > * {
+        padding: 1rem;
+    }
+    
+    .form-floating > .form-control::placeholder {
+        color: transparent;
+    }
+    
+    .form-floating > .form-control:focus,
+    .form-floating > .form-control:not(:placeholder-shown) {
+        padding-top: 1.625rem;
+        padding-bottom: .625rem;
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize tooltips
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl)
+        });
+        
+        // Initialize floating labels
+        const inputs = document.querySelectorAll('.form-control, .form-select');
+        inputs.forEach(input => {
+            if (input.value) {
+                input.parentElement.classList.add('focused');
+            }
+            
+            input.addEventListener('focus', function() {
+                this.parentElement.classList.add('focused');
+            });
+            
+            input.addEventListener('blur', function() {
+                if (!this.value) {
+                    this.parentElement.classList.remove('focused');
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}

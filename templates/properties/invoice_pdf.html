@@ -1,0 +1,166 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Invoice #{{ invoice.invoice_number }}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 40px;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .logo {
+            max-width: 150px;
+            margin-bottom: 20px;
+        }
+        .company-info {
+            text-align: left;
+            float: left;
+            width: 50%;
+        }
+        .invoice-info {
+            text-align: right;
+            float: right;
+            width: 50%;
+        }
+        .clearfix::after {
+            content: "";
+            clear: both;
+            display: table;
+        }
+        .section {
+            margin-bottom: 20px;
+        }
+        .section-title {
+            font-weight: bold;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 5px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f5f5f5;
+        }
+        .amount-table td:last-child {
+            text-align: right;
+        }
+        .total-row {
+            font-weight: bold;
+            background-color: #f9f9f9;
+        }
+        .status {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 3px;
+            font-weight: bold;
+        }
+        .status-paid {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .status-pending {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+        .status-overdue {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <div class="header clearfix">
+        <div class="company-info">
+            <img src="{{ domain }}{% static 'img/logo.jpeg' %}" alt="RMS Logo" class="logo">
+            <div>
+                <strong>Rental Management System</strong><br>
+                123 Business Street<br>
+                City, State 12345<br>
+                Phone: (555) 123-4567<br>
+                Email: support@rms.com
+            </div>
+        </div>
+        <div class="invoice-info">
+            <h1>INVOICE</h1>
+            <p><strong>#{{ invoice.invoice_number }}</strong></p>
+            <p>Issue Date: {{ invoice.issue_date|date:"M d, Y" }}<br>
+            Due Date: {{ invoice.due_date|date:"M d, Y" }}</p>
+            <div class="status status-{{ invoice.status }}">
+                {{ invoice.status|title }}
+            </div>
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="section-title">Bill To</div>
+        <p>
+            {{ tenant.user.get_full_name }}<br>
+            {{ property.title }}<br>
+            Unit: {{ invoice.lease_agreement.property_unit.unit_number }}<br>
+            {{ property.address }}
+        </p>
+    </div>
+
+    <div class="section">
+        <div class="section-title">Invoice Details</div>
+        <table class="amount-table">
+            <tr>
+                <th>Description</th>
+                <td colspan="2">{{ invoice.description|default:"Rent Payment" }}</td>
+            </tr>
+            <tr>
+                <th>Amount</th>
+                <td colspan="2">₹{{ invoice.amount }}</td>
+            </tr>
+            {% if invoice.late_fee > 0 %}
+            <tr>
+                <th>Late Fee</th>
+                <td colspan="2">₹{{ invoice.late_fee }}</td>
+            </tr>
+            {% endif %}
+            <tr class="total-row">
+                <th>Total Amount</th>
+                <td colspan="2">₹{{ invoice.total_amount }}</td>
+            </tr>
+        </table>
+    </div>
+
+    {% if invoice.bank_account %}
+    <div class="section">
+        <div class="section-title">Payment Information</div>
+        <table>
+            <tr>
+                <th>Bank Name</th>
+                <td>{{ invoice.bank_account.bank_name }}</td>
+            </tr>
+            <tr>
+                <th>Account Number</th>
+                <td>{{ invoice.bank_account.account_number }}</td>
+            </tr>
+            <tr>
+                <th>IFSC Code</th>
+                <td>{{ invoice.bank_account.ifsc_code }}</td>
+            </tr>
+        </table>
+    </div>
+    {% endif %}
+
+    <div class="section">
+        <p><small>This is a computer-generated document. No signature is required.</small></p>
+    </div>
+</body>
+</html>

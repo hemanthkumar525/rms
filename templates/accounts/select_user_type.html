@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-body p-4">
+                    <div class="text-center mb-4">
+                        <i class="fas fa-users fa-3x text-primary mb-3"></i>
+                        <h2>Select Your Role</h2>
+                        <p class="text-muted">Choose your role to continue</p>
+                    </div>
+
+                    <div class="row g-4">
+                        <div class="col-md-4">
+                            <div class="card h-100">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-building fa-2x text-primary mb-3"></i>
+                                    <h5>Property Owner</h5>
+                                    <p class="text-muted small">Manage your properties and tenants</p>
+                                    <a href="{% url 'accounts:register_property_owner' %}" class="btn btn-primary">
+                                        Continue as Owner
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <div class="card h-100">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-user-tie fa-2x text-primary mb-3"></i>
+                                    <h5>Property Manager</h5>
+                                    <p class="text-muted small">Manage properties for owners</p>
+                                    <a href="{% url 'properties:property_manager_create' %}" class="btn btn-primary">
+                                        Continue as Manager
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-4">
+                            <div class="card h-100">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-home fa-2x text-primary mb-3"></i>
+                                    <h5>Tenant</h5>
+                                    <p class="text-muted small">View your rental information</p>
+                                    <button class="btn btn-primary" disabled>
+                                        Requires Invitation
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,126 @@
+
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}{% if form.instance.pk %}Edit Invoice{% else %}Create New Invoice{% endif %} - RMS{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-10">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white py-3">
+                <h4 class="mb-0">{% if form.instance.pk %}Edit Invoice{% else %}Create New Invoice{% endif %}</h4>
+            </div>
+            <div class="card-body p-4">
+                <form method="post" id="invoice-form" novalidate>
+                    {% csrf_token %}
+                    {% if form.non_field_errors %}
+                    <div class="alert alert-danger">
+                        {{ form.non_field_errors }}
+                    </div>
+                    {% endif %}
+
+                    <!-- Lease Agreement and Invoice Number -->
+                    <h5 class="mb-4">Lease Agreement Details</h5>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            {{ form.lease_agreement|as_crispy_field }}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            {{ form.invoice_number|as_crispy_field }}
+                        </div>
+                    </div>
+
+                    <!-- Property Unit and Tenant -->
+                    <h5 class="mb-4 mt-4">Property and Tenant Details</h5>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            {{ form.property_unit|as_crispy_field }}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            {{ form.tenant|as_crispy_field }}
+                        </div>
+                    </div>
+
+                    <!-- Payment Details -->
+                    <h5 class="mb-4 mt-4">Payment Details</h5>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            {{ form.amount|as_crispy_field }}
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            {{ form.payment_type|as_crispy_field }}
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            {{ form.due_date|as_crispy_field }}
+                        </div>
+                    </div>
+
+                    <!-- Additional Charges -->
+                    <h5 class="mb-4 mt-4">Additional Charges</h5>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            {{ form.late_fee|as_crispy_field }}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            {{ form.bank_account|as_crispy_field }}
+                        </div>
+                    </div>
+
+                    <!-- Description -->
+                    <h5 class="mb-4 mt-4">Description</h5>
+                    {{ form.description|as_crispy_field }}
+
+                    <div class="mt-4 d-flex justify-content-end">
+                        <button type="button" class="btn btn-secondary me-2" onclick="window.history.back()">
+                            Cancel
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            {% if form.instance.pk %}Update{% else %}Create{% endif %} Invoice
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize select2 for dropdowns
+        $('.select2').select2({
+            theme: 'bootstrap4',
+            width: '100%'
+        });
+
+        // Handle lease agreement change
+        $('#id_lease_agreement').change(function() {
+            var leaseId = $(this).val();
+            if (leaseId) {
+                $.ajax({
+                    url: '{% url "payments:get_lease_details" %}',
+                    data: {
+                        'lease_id': leaseId
+                    },
+                    dataType: 'json',
+                    success: function(data) {
+                        $('#id_property_unit').val(data.property_unit_id).trigger('change');
+                        $('#id_tenant').val(data.tenant_id).trigger('change');
+                        $('#id_amount').val(data.rent_amount);
+                    }
+                });
+            }
+        });
+
+        // Calculate total amount when amount or late fee changes
+        $('#id_amount, #id_late_fee').on('input', function() {
+            var amount = parseFloat($('#id_amount').val()) || 0;
+            var lateFee = parseFloat($('#id_late_fee').val()) || 0;
+            var total = amount + lateFee;
+            $('#total-amount').text(total.toFixed(2));
+        });
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card shadow">
+        <div class="card-header bg-danger text-white">
+            <h5 class="mb-0">Delete Lease Agreement</h5>
+        </div>
+        <div class="card-body">
+            <p class="mb-4">Are you sure you want to delete the lease agreement for:</p>
+            <ul class="list-unstyled">
+                <li><strong>Property:</strong> {{ lease.property.title }}</li>
+                <li><strong>Unit:</strong> {{ lease.unit.unit_number }}</li>
+                <li><strong>Tenant:</strong> {{ lease.tenant.user.get_full_name }}</li>
+                <li><strong>Start Date:</strong> {{ lease.start_date }}</li>
+                <li><strong>End Date:</strong> {{ lease.end_date }}</li>
+                <li><strong>Status:</strong> {{ lease.status|title }}</li>
+            </ul>
+            <div class="alert alert-warning">
+                <i class="fas fa-exclamation-triangle"></i>
+                This action cannot be undone. All related data will be permanently deleted.
+            </div>
+            <form method="post">
+                {% csrf_token %}
+                <div class="d-flex justify-content-end gap-2">
+                    <a href="{% url 'properties:property_detail' pk=lease.property.id %}" class="btn btn-secondary">
+                        <i class="fas fa-times"></i> Cancel
+                    </a>
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash"></i> Delete Lease Agreement
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

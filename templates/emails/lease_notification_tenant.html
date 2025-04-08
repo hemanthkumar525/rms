@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<body>
+    <h2>New Lease Agreement</h2>
+    <p>Dear {{ lease.tenant.user.first_name }},</p>
+    
+    <p>A new lease agreement has been created for:</p>
+    
+    <div style="margin: 20px 0;">
+        <strong>Property:</strong> {{ property.title }}<br>
+        <strong>Start Date:</strong> {{ lease.start_date|date:"F j, Y" }}<br>
+        <strong>End Date:</strong> {{ lease.end_date|date:"F j, Y" }}<br>
+        <strong>Monthly Rent:</strong> ₹{{ lease.monthly_rent }}<br>
+        <strong>Security Deposit:</strong> ₹{{ lease.security_deposit }}
+    </div>
+
+    <p>Please log in to your account to review and sign the lease agreement.</p>
+    
+    <p>Best regards,<br>RMS Team</p>
+</body>
+</html>

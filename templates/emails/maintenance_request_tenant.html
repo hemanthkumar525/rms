@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<body>
+    <h2>Maintenance Request Confirmation</h2>
+    <p>Dear {{ request.tenant.user.first_name }},</p>
+    
+    <p>Your maintenance request has been successfully submitted:</p>
+    
+    <div style="margin: 20px 0;">
+        <strong>Property:</strong> {{ property.title }}<br>
+        <strong>Unit:</strong> {{ request.unit.unit_number }}<br>
+        <strong>Issue Type:</strong> {{ request.issue_type }}<br>
+        <strong>Description:</strong> {{ request.description }}<br>
+        <strong>Priority:</strong> {{ request.priority }}<br>
+        <strong>Submitted:</strong> {{ request.created_at|date:"F j, Y" }}
+    </div>
+
+    <p>Your property owner has been notified and will review your request.</p>
+    
+    <p>Best regards,<br>RMS Team</p>
+</body>
+</html>

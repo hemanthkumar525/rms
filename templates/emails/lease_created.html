@@ -1,0 +1,14 @@
+{% extends 'emails/base_email.html' %}
+
+{% block content %}
+<h2>New Lease Agreement</h2>
+<p>A new lease agreement has been created:</p>
+<ul>
+    <li>Property: {{ lease.property.title }}</li>
+    <li>Unit: {{ lease.unit.unit_number }}</li>
+    <li>Start Date: {{ lease.start_date|date:"M d, Y" }}</li>
+    <li>End Date: {{ lease.end_date|date:"M d, Y" }}</li>
+    <li>Monthly Rent: ${{ lease.monthly_rent }}</li>
+</ul>
+<p>Best regards,<br>RMS Team</p>
+{% endblock %}

@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+<body>
+    <h2>New Invoice</h2>
+    <p>Dear {{ invoice.tenant.user.first_name }},</p>
+    
+    <p>A new invoice has been generated for your rental:</p>
+    
+    <div style="margin: 20px 0;">
+        <strong>Property:</strong> {{ property.title }}<br>
+        <strong>Invoice Number:</strong> {{ invoice.invoice_number }}<br>
+        <strong>Amount Due:</strong> ₹{{ invoice.total_amount }}<br>
+        <strong>Due Date:</strong> {{ invoice.due_date|date:"F j, Y" }}<br>
+    </div>
+
+    <p>Please log in to your account to view and pay this invoice.</p>
+    
+    <p>Best regards,<br>RMS Team</p>
+</body>
+</html>

@@ -1,0 +1,14 @@
+{% for notification in notifications %}
+    <div class="dropdown-item notification-item {% if not notification.is_read %}bg-light{% endif %}" 
+         data-notification-id="{{ notification.id }}">
+        <div class="d-flex w-100 justify-content-between">
+            <h6 class="mb-1">{{ notification.title }}</h6>
+            <small class="text-muted">{{ notification.created_at|timesince }} ago</small>
+        </div>
+        <p class="mb-1 text-wrap">{{ notification.message|truncatechars:100 }}</p>
+    </div>
+{% empty %}
+    <div class="dropdown-item text-center text-muted">
+        No new notifications
+    </div>
+{% endfor %}

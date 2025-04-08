@@ -1,0 +1,157 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Payment Receipt - RMS{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="card shadow">
+        <div class="card-body p-4">
+            <!-- Receipt Header -->
+            <div class="row mb-4">
+                <div class="col-6">
+                    <img src="{% static 'img/logo.png' %}" alt="RMS Logo" class="img-fluid" style="max-height: 50px;">
+                    <h4 class="mt-2">Payment Receipt</h4>
+                </div>
+                <div class="col-6 text-end">
+                    <h6 class="mb-1">Receipt #: {{ payment.receipt_number }}</h6>
+                    <p class="mb-1">Date: {{ payment.payment_date|date:"F d, Y" }}</p>
+                    <p class="mb-0">Time: {{ payment.payment_date|time:"g:i A" }}</p>
+                </div>
+            </div>
+
+            <!-- Property and Payment Details -->
+            <div class="row mb-4">
+                <div class="col-6">
+                    <h6 class="mb-2">Property Details</h6>
+                    <p class="mb-1"><strong>{{ payment.lease.property.title }}</strong></p>
+                    <p class="mb-1">{{ payment.lease.property.address }}</p>
+                    <p class="mb-0">{{ payment.lease.property.city }}, {{ payment.lease.property.state }} {{ payment.lease.property.zip_code }}</p>
+                </div>
+                <div class="col-6">
+                    <h6 class="mb-2">Tenant Details</h6>
+                    <p class="mb-1"><strong>{{ payment.lease.tenant.user.get_full_name }}</strong></p>
+                    <p class="mb-1">{{ payment.lease.tenant.phone_number }}</p>
+                    <p class="mb-0">{{ payment.lease.tenant.user.email }}</p>
+                </div>
+            </div>
+
+            <!-- Payment Information -->
+            <div class="table-responsive mb-4">
+                <table class="table table-bordered">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Description</th>
+                            <th class="text-end">Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Monthly Rent</td>
+                            <td class="text-end">${{ payment.amount }}</td>
+                        </tr>
+                        {% if payment.late_fee %}
+                        <tr>
+                            <td>Late Fee</td>
+                            <td class="text-end">${{ payment.late_fee }}</td>
+                        </tr>
+                        {% endif %}
+                        {% if payment.utilities_amount %}
+                        <tr>
+                            <td>Utilities</td>
+                            <td class="text-end">${{ payment.utilities_amount }}</td>
+                        </tr>
+                        {% endif %}
+                        {% if payment.other_charges %}
+                        <tr>
+                            <td>Other Charges</td>
+                            <td class="text-end">${{ payment.other_charges }}</td>
+                        </tr>
+                        {% endif %}
+                        <tr class="table-active fw-bold">
+                            <td>Total Amount Paid</td>
+                            <td class="text-end">${{ payment.amount }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Payment Method -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <h6 class="mb-2">Payment Method</h6>
+                    <p class="mb-1">{{ payment.get_payment_method_display }}</p>
+                    {% if payment.reference_number %}
+                    <p class="mb-0">Reference: {{ payment.reference_number }}</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Status and Signature -->
+            <div class="row">
+                <div class="col-6">
+                    <div class="alert alert-success mb-0">
+                        <h6 class="alert-heading mb-1">Payment Status</h6>
+                        <p class="mb-0">{{ payment.get_status_display }}</p>
+                    </div>
+                </div>
+                <div class="col-6 text-end">
+                    <p class="mb-1">Authorized by:</p>
+                    <p class="mb-0">{{ payment.property_owner.user.get_full_name }}</p>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <hr class="my-4">
+            <div class="row">
+                <div class="col-12 text-center">
+                    <small class="text-muted">
+                        This is a computer-generated receipt and does not require a physical signature.
+                        For any queries, please contact your property manager.
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="row mt-4">
+        <div class="col-12 text-end">
+            
+            <button onclick="window.print()" class="btn btn-primary">
+                <i class="fas fa-print"></i> Print Receipt
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Print Styles -->
+<style media="print">
+    @page {
+        size: A4;
+        margin: 1cm;
+    }
+    body {
+        print-color-adjust: exact;
+        -webkit-print-color-adjust: exact;
+    }
+    .btn, .no-print {
+        display: none !important;
+    }
+    .card {
+        border: none !important;
+        box-shadow: none !important;
+    }
+    .table {
+        border-color: #dee2e6 !important;
+    }
+    .table-active {
+        background-color: #f8f9fa !important;
+    }
+    .alert-success {
+        border: 1px solid #d4edda !important;
+        background-color: #d4edda !important;
+        color: #155724 !important;
+    }
+</style>
+{% endblock %}

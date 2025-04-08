@@ -1,0 +1,366 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Tenants - RMS{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header Section -->
+    <div class="row mb-4 animate__animated animate__fadeIn">
+        <div class="col-12">
+            <div class="d-sm-flex align-items-center justify-content-between">
+                <div>
+                    <h1 class="h3 mb-0 text-gray-800 fw-bold">
+                        <i class="fas fa-users me-2 text-primary"></i>
+                        Tenants
+                    </h1>
+                    <p class="text-muted mb-0">Manage and track all your tenants in one place.</p>
+                </div>
+                {% if user.is_property_owner %}
+                <div class="mt-3 mt-sm-0">
+                    
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Section -->
+    <div class="card border-0 shadow-lg mb-4 animate__animated animate__fadeInUp" style="animation-delay: 100ms">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-4">
+                    <div class="form-floating">
+                        <input type="text" class="form-control" id="search" name="search" 
+                               placeholder="Search tenants...">
+                        <label for="search"><i class="fas fa-search text-muted me-2"></i>Search</label>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-floating">
+                        <select class="form-select" id="status" name="status">
+                            <option value="">All Status</option>
+                            <option value="active">Active</option>
+                            <option value="inactive">Inactive</option>
+                        </select>
+                        <label for="status"><i class="fas fa-filter text-muted me-2"></i>Status</label>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-floating">
+                        <select class="form-select" id="property" name="property">
+                            <option value="">All Properties</option>
+                            {% for property in properties %}
+                                <option value="{{ property.id }}">{{ property.title }}</option>
+                            {% endfor %}
+                        </select>
+                        <label for="property"><i class="fas fa-building text-muted me-2"></i>Property</label>
+                    </div>
+                </div>
+                <div class="col-md-2 d-flex align-items-center">
+                    <button type="submit" class="btn btn-primary btn-lg w-100 hover-lift">
+                        <i class="fas fa-search me-2"></i>Filter
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="row g-4 mb-4">
+        <div class="col-sm-6 col-xl-3 animate__animated animate__fadeInUp" style="animation-delay: 200ms">
+            <div class="card border-0 shadow-lg hover-lift">
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <div class="flex-shrink-0 me-3">
+                            <div class="avatar avatar-lg rounded-circle bg-primary-soft">
+                                <i class="fas fa-users fa-lg text-primary"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1">
+                            <h3 class="mb-0 fw-bold">{{ total_tenants }}</h3>
+                            <p class="text-muted mb-0">Total Tenants</p>
+                        </div>
+                    </div>
+                    <div class="progress" style="height: 4px;">
+                        <div class="progress-bar bg-primary" style="width: 100%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-sm-6 col-xl-3 animate__animated animate__fadeInUp" style="animation-delay: 300ms">
+            <div class="card border-0 shadow-lg hover-lift">
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <div class="flex-shrink-0 me-3">
+                            <div class="avatar avatar-lg rounded-circle bg-success-soft">
+                                <i class="fas fa-user-check fa-lg text-success"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1">
+                            <h3 class="mb-0 fw-bold">{{ active_tenants }}</h3>
+                            <p class="text-muted mb-0">Active Tenants</p>
+                        </div>
+                    </div>
+                    <div class="progress" style="height: 4px;">
+                        <div class="progress-bar bg-success" style="width: 100%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-sm-6 col-xl-3 animate__animated animate__fadeInUp" style="animation-delay: 400ms">
+            <div class="card border-0 shadow-lg hover-lift">
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <div class="flex-shrink-0 me-3">
+                            <div class="avatar avatar-lg rounded-circle bg-info-soft">
+                                <i class="fas fa-file-contract fa-lg text-info"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1">
+                            <h3 class="mb-0 fw-bold">{{ active_leases }}</h3>
+                            <p class="text-muted mb-0">Active Leases</p>
+                        </div>
+                    </div>
+                    <div class="progress" style="height: 4px;">
+                        <div class="progress-bar bg-info" style="width: 100%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-sm-6 col-xl-3 animate__animated animate__fadeInUp" style="animation-delay: 500ms">
+            <div class="card border-0 shadow-lg hover-lift">
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <div class="flex-shrink-0 me-3">
+                            <div class="avatar avatar-lg rounded-circle bg-warning-soft">
+                                <i class="fas fa-money-bill fa-lg text-warning"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1">
+                            <h3 class="mb-0 fw-bold">${{ total_rent }}</h3>
+                            <p class="text-muted mb-0">Monthly Revenue</p>
+                        </div>
+                    </div>
+                    <div class="progress" style="height: 4px;">
+                        <div class="progress-bar bg-warning" style="width: 100%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tenant List -->
+    <div class="card border-0 shadow-lg animate__animated animate__fadeInUp" style="animation-delay: 600ms">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-light">
+                        <tr>
+                            <th class="border-0 ps-4">Tenant</th>
+                            <th class="border-0">Contact</th>
+                            <th class="border-0">Property</th>
+                            <th class="border-0">Lease Status</th>
+                            <th class="border-0">Payment Status</th>
+                            <th class="border-0 text-end pe-4">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for tenant in tenants %}
+                        <tr>
+                            <td class="ps-4">
+                                <div class="d-flex align-items-center">
+                                    <div class="avatar avatar-md bg-primary-soft rounded-circle">
+                                        {% if tenant.user.profile_picture %}
+                                            <img src="{{ tenant.user.profile_picture.url }}" 
+                                                 class="rounded-circle" alt="{{ tenant.user.get_full_name }}"
+                                                 style="width: 40px; height: 40px; object-fit: cover;">
+                                        {% else %}
+                                            <i class="fas fa-user text-primary"></i>
+                                        {% endif %}
+                                    </div>
+                                    <div class="ms-3">
+                                        <h6 class="mb-0">{{ tenant.user.get_full_name }}</h6>
+                                        <small class="text-muted">Joined {{ tenant.user.date_joined|date:"M d, Y" }}</small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <div>
+                                    <h6 class="mb-0">{{ tenant.user.email }}</h6>
+                                    <small class="text-muted">{{ tenant.phone_number }}</small>
+                                </div>
+                            </td>
+                            <td>
+                                {% if tenant.current_lease %}
+                                <div>
+                                    <h6 class="mb-0">{{ tenant.current_lease.property.title }}</h6>
+                                    <small class="text-muted">Unit {{ tenant.current_lease.unit.number }}</small>
+                                </div>
+                                {% else %}
+                                <span class="text-muted">No active lease</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if tenant.current_lease %}
+                                    {% if tenant.current_lease.is_active %}
+                                        <span class="badge bg-success-soft text-success">Active</span>
+                                    {% elif tenant.current_lease.is_expired %}
+                                        <span class="badge bg-danger-soft text-danger">Expired</span>
+                                    {% else %}
+                                        <span class="badge bg-warning-soft text-warning">Pending</span>
+                                    {% endif %}
+                                {% else %}
+                                    <span class="badge bg-secondary-soft text-secondary">No Lease</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if tenant.payment_status == 'paid' %}
+                                    <span class="badge bg-success-soft text-success">Paid</span>
+                                {% elif tenant.payment_status == 'partial' %}
+                                    <span class="badge bg-warning-soft text-warning">Partial</span>
+                                {% else %}
+                                    <span class="badge bg-danger-soft text-danger">Unpaid</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end pe-4">
+                                {% if user.is_property_owner %}
+                                <a href="{% url 'payments:payment_create_view' %}?tenant={{ tenant.id }}" 
+                                   class="btn btn-sm btn-light hover-lift"
+                                   data-bs-toggle="tooltip" title="Record Payment">
+                                    <i class="fas fa-money-bill"></i>
+                                </a>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center py-5">
+                                <div class="text-muted">
+                                    <i class="fas fa-users fa-3x mb-3"></i>
+                                    <h5>No Tenants Found</h5>
+                                    <p>No tenants match your search criteria.</p>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    {% if is_paginated %}
+    <nav aria-label="Page navigation" class="mt-4 animate__animated animate__fadeInUp" style="animation-delay: 700ms">
+        <ul class="pagination pagination-lg justify-content-center">
+            {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link hover-lift" href="?page={{ page_obj.previous_page_number }}">
+                        <i class="fas fa-chevron-left me-1"></i>Previous
+                    </a>
+                </li>
+            {% endif %}
+            
+            {% for num in page_obj.paginator.page_range %}
+                {% if page_obj.number == num %}
+                    <li class="page-item active">
+                        <span class="page-link">{{ num }}</span>
+                    </li>
+                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                    <li class="page-item">
+                        <a class="page-link hover-lift" href="?page={{ num }}">{{ num }}</a>
+                    </li>
+                {% endif %}
+            {% endfor %}
+            
+            {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link hover-lift" href="?page={{ page_obj.next_page_number }}">
+                        Next<i class="fas fa-chevron-right ms-1"></i>
+                    </a>
+                </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .bg-primary-soft { background-color: rgba(37, 99, 235, 0.1); }
+    .bg-success-soft { background-color: rgba(5, 150, 105, 0.1); }
+    .bg-warning-soft { background-color: rgba(217, 119, 6, 0.1); }
+    .bg-danger-soft { background-color: rgba(220, 38, 38, 0.1); }
+    .bg-secondary-soft { background-color: rgba(107, 114, 128, 0.1); }
+    
+    .avatar {
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .avatar-lg {
+        width: 48px;
+        height: 48px;
+    }
+    
+    .hover-lift {
+        transition: transform 0.2s ease;
+    }
+    
+    .hover-lift:hover {
+        transform: translateY(-2px);
+    }
+    
+    .table > :not(caption) > * > * {
+        padding: 1rem;
+    }
+    
+    .form-floating > .form-control::placeholder {
+        color: transparent;
+    }
+    
+    .form-floating > .form-control:focus,
+    .form-floating > .form-control:not(:placeholder-shown) {
+        padding-top: 1.625rem;
+        padding-bottom: .625rem;
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize tooltips
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl)
+        });
+        
+        // Initialize floating labels
+        const inputs = document.querySelectorAll('.form-control, .form-select');
+        inputs.forEach(input => {
+            if (input.value) {
+                input.parentElement.classList.add('focused');
+            }
+            
+            input.addEventListener('focus', function() {
+                this.parentElement.classList.add('focused');
+            });
+            
+            input.addEventListener('blur', function() {
+                if (!this.value) {
+                    this.parentElement.classList.remove('focused');
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,173 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Payments - RMS{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Payments</h1>
+        {% if user.is_property_owner %}
+        <div class="d-flex">
+            <a href="{% url 'payments:invoice_create' %}" class="btn btn-primary btn-sm mr-2">
+                <i class="fas fa-plus fa-sm"></i> Create Invoice
+            </a>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="row mb-4">
+        <div class="col-xl-4 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Total Invoices</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">${{ total_amount|floatformat:2 }}</div>
+                            <div class="text-muted small">{{ total_count }} invoices</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-file-invoice-dollar fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-4 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Pending Invoices</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">${{ pending_amount|floatformat:2 }}</div>
+                            <div class="text-muted small">{{ pending_count }} invoices</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-clock fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-4 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Paid Invoices</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">${{ completed_amount|floatformat:2 }}</div>
+                            <div class="text-muted small">{{ completed_count }} invoices</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-check-circle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Invoices Table -->
+    <div class="card shadow mb-4">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Invoice #</th>
+                            <th>Property</th>
+                            <th>Tenant</th>
+                            <th>Type</th>
+                            <th>Amount</th>
+                            <th>Due Date</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for invoice in invoices %}
+                            <tr>
+                                <td>{{ invoice.invoice_number }}</td>
+                                <td>{{ invoice.property.title }}</td>
+                                <td>{{ invoice.tenant.user.get_full_name }}</td>
+                                <td>{{ invoice.get_payment_type_display }}</td>
+                                <td>₹{{ invoice.total_amount|floatformat:2 }}</td>
+                                <td>{{ invoice.due_date|date:"M d, Y" }}</td>
+                                <td>
+                                    <span class="badge {% if invoice.status == 'paid' %}bg-success
+                                                     {% elif invoice.status == 'pending' %}bg-warning
+                                                     {% elif invoice.status == 'overdue' %}bg-danger
+                                                     {% else %}bg-secondary{% endif %}">
+                                        {{ invoice.get_status_display }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <a href="{% url 'payments:invoice_detail' invoice.id %}" 
+                                       class="btn btn-sm btn-info">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    {% if user.is_property_owner %}
+                                    <a href="{% url 'payments:invoice_update' invoice.id %}" 
+                                       class="btn btn-sm btn-primary">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    {% endif %}
+                                    {% if user.is_tenant and invoice.status == 'pending' %}
+                                    <a href="{% url 'payments:tenant_make_payment' invoice.id %}" 
+                                       class="btn btn-sm btn-success">
+                                        <i class="fas fa-money-bill"></i> Pay
+                                    </a>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="8" class="text-center py-5">
+                                    <div class="text-muted">
+                                        <i class="fas fa-file-invoice fa-3x mb-3"></i>
+                                        <p>No invoices found</p>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            {% if invoices.has_other_pages %}
+            <nav aria-label="Page navigation" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    {% if invoices.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ invoices.previous_page_number }}">&laquo;</a>
+                        </li>
+                    {% endif %}
+
+                    {% for i in invoices.paginator.page_range %}
+                        {% if invoices.number == i %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ i }}</span>
+                            </li>
+                        {% else %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ i }}">{{ i }}</a>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if invoices.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ invoices.next_page_number }}">&raquo;</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

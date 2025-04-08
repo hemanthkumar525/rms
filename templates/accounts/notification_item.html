@@ -1,0 +1,9 @@
+<!-- In rms/templates/accounts/notification_item.html -->
+
+<li>
+    {{ notification.message }} 
+    {% if not notification.is_read %}
+        <a href="{% url 'mark_as_read' notification.id %}">Mark as Read</a>
+    {% endif %}
+    <small>{{ notification.timestamp }}</small>
+</li>

@@ -1,0 +1,720 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+{% csrf_token %}
+<div class="container mt-4">
+    <!-- Property Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>{{ property.title }}</h2>
+        <a href="{% url 'properties:property_list' %}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Properties
+        </a>
+    </div>
+
+    <!-- Progress Flow-->
+    <div class="progress-flow mb-5">
+        <div class="row justify-content-center">
+            <div class="col-12">
+                <div class="multi-steps">
+                    {% comment %} Step 1 {% endcomment %}
+                    <div class="step {% if property_units.exists %}completed{% endif %}">
+                        <div class="step-icon">
+                            <i class="fas fa-building"></i>
+                        </div>
+                        <div class="step-label">Create Unit</div>
+                    </div>
+
+                    {% comment %} Step 2 {% endcomment %}
+                    <div class="step {% if property.property_tenants.exists %}completed{% endif %}">
+                        <div class="step-icon">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <div class="step-label">Add Tenant</div>
+                    </div>
+
+                    {% comment %} Step 3 {% endcomment %}
+                    <div class="step {% if property.bank_accounts.exists %}completed{% endif %}">
+                        <div class="step-icon">
+                            <i class="fas fa-user-circle"></i>
+                        </div>
+                        <div class="step-label">Create Account</div>
+                    </div>
+
+                    {% comment %} Step 4 {% endcomment %}
+                    <div class="step {% if property.leaseagreement_set.exists %}completed{% endif %}">
+                        <div class="step-icon">
+                            <i class="fas fa-file-contract"></i>
+                        </div>
+                        <div class="step-label">Create Lease</div>
+                    </div>
+
+                    {% comment %} Step 5 {% endcomment %}
+                    <div class="step {% if property.property_invoices.exists %}completed{% endif %}">
+                        <div class="step-icon">
+                            <i class="fas fa-file-invoice-dollar"></i>
+                        </div>
+                        <div class="step-label">Generate Invoice</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    
+</div>
+
+<!-- Styles for Progress Flow -->
+<style>
+    .progress-flow {
+        padding: 40px 0;
+        background: #f9f9f9;
+        border-radius: 12px;
+    }
+
+    .multi-steps {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        position: relative;
+        padding: 0 20px;
+        overflow-x: auto;
+    }
+
+    .multi-steps::before {
+    content: '';
+    position: absolute;
+    top: 35px;
+    left: 0;
+    right: 0;
+    height: 8px; /* ⬅️ Increased from 4px to 8px */
+    background: linear-gradient(to right, #96351e, #96351e);
+    z-index: 0;
+    border-radius: 4px;
+}
+
+
+    .step {
+        position: relative;
+        z-index: 1;
+        text-align: center;
+        flex: 1;
+        min-width: 120px;
+        transition: transform 0.3s ease;
+    }
+
+    .step:hover {
+        transform: translateY(-5px);
+    }
+
+    .step-icon {
+        width: 60px;
+        height: 60px;
+        margin: 0 auto 12px;
+        background: #ffffff;
+        border: 3px solid #dee2e6;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        color: #96351e;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+    }
+
+    .step.completed .step-icon {
+        background: linear-gradient(to right, #96351e, #96351e);
+        border-color: #96351e;
+        color: white;
+    }
+
+    .step-label {
+        font-size: 14px;
+        font-weight: 600;
+        color: #96351e;
+        transition: color 0.3s ease;
+    }
+
+    .step.completed .step-label {
+        color: #96351e;
+    }
+
+    @media (max-width: 768px) {
+        .multi-steps {
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        .step {
+            flex: none;
+            width: 45%;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .step {
+            width: 100%;
+        }
+    }
+</style>
+
+    <!-- Property cards -->
+    <div class="row g-4 mb-4">
+        <!-- Total Units Card -->
+        <div class="col-sm-6 col-xl-3 animate__animated animate__fadeInUp" style="animation-delay: 100ms; flex: 0 0 20%; max-width: 20%;">
+            <div class="card border-0 shadow-lg hover-lift">
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <div class="flex-shrink-0 me-3">
+                            <div class="avatar avatar-lg rounded-circle bg-primary-soft">
+                                <i class="fas fa-building fa-lg text-primary"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1">
+                            <h3 class="mb-0 fw-bold text-dark">{{ property.units.count }}</h3>
+                            <p class="text-muted mb-0">Total Units</p>
+                        </div>
+                    </div>
+                    <div class="progress" style="height: 4px;">
+                        <div class="progress-bar bg-primary" style="width: 100%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Active Tenants Card -->
+        <div class="col-sm-6 col-xl-3 animate__animated animate__fadeInUp" style="animation-delay: 200ms; flex: 0 0 20%; max-width: 20%;">
+            <div class="card border-0 shadow-lg hover-lift">
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <div class="flex-shrink-0 me-3">
+                            <div class="avatar avatar-lg rounded-circle bg-info-soft">
+                                <i class="fas fa-users fa-lg text-info"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1">
+                            <h3 class="mb-0 fw-bold text-dark">{{ property.property_tenants.count }}</h3>
+                            <p class="text-muted mb-0">Active Tenants</p>
+                        </div>
+                    </div>
+                    <div class="progress" style="height: 4px;">
+                        <div class="progress-bar bg-info" style="width: 100%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Active Leases Card -->
+        <div class="col-sm-6 col-xl-3 animate__animated animate__fadeInUp" style="animation-delay: 300ms; flex: 0 0 20%; max-width: 20%;">
+            <div class="card border-0 shadow-lg hover-lift">
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <div class="flex-shrink-0 me-3">
+                            <div class="avatar avatar-lg rounded-circle bg-success-soft">
+                                <i class="fas fa-file-contract fa-lg text-success"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1">
+                            <h3 class="mb-0 fw-bold text-dark">{{ property.leaseagreement_set.count }}</h3>
+                            <p class="text-muted mb-0">Active Leases</p>
+                        </div>
+                    </div>
+                    <div class="progress" style="height: 4px;">
+                        <div class="progress-bar bg-success" style="width: 100%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bank Accounts Card -->
+        <div class="col-sm-6 col-xl-3 animate__animated animate__fadeInUp" style="animation-delay: 400ms; flex: 0 0 20%; max-width: 20%;">
+            <div class="card border-0 shadow-lg hover-lift">
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <div class="flex-shrink-0 me-3">
+                            <div class="avatar avatar-lg rounded-circle bg-warning-soft">
+                                <i class="fas fa-university fa-lg text-warning"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1">
+                            <h3 class="mb-0 fw-bold text-dark">{{ property.bank_accounts.count }}</h3>
+                            <p class="text-muted mb-0">Active Accounts</p>
+                        </div>
+                    </div>
+                    <div class="progress" style="height: 4px;">
+                        <div class="progress-bar bg-warning" style="width: 100%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    <!-- Property Details Card -->
+    <div class="card shadow mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Property Information</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>Address:</strong> {{ property.address }}</p>
+                </div>
+                <div class="col-md-6">
+                    <p><strong>Total Units:</strong> {{ property.units.count }}</p>
+                    <p><strong>Active Leases:</strong> {{ property.leaseagreement_set.count }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Units Section -->
+    <div class="card shadow mb-4">
+        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Property Units</h5>
+            <a href="{% url 'properties:unit_create' property_pk=property.id %}" class="btn btn-light btn-sm">
+                <i class="fas fa-plus"></i> New Unit
+            </a>
+        </div>
+        <div class="card-body">
+            <!-- Replace the units-list div in property_detail.html with this -->
+            <div id="units-list">
+                {% if property.units.exists %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Unit Number</th>
+                                    <th>Monthly Rent</th>
+                                    <th>Status</th>
+                                    <th>Current Tenant</th>
+                                    <th>Lease Details</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for unit in property.units.all %}
+                                {% with active_lease=unit.lease_agreements.all|dictsort:"start_date"|last %}
+                                <tr>
+                                    <td>{{ unit.unit_number }}</td>
+                                    <td>
+                                        {% if active_lease and active_lease.status == 'active' %}
+                                            <div class="d-flex align-items-center">
+                                                <i class="fas fa-money-bill-wave text-success me-2"></i>
+                                                <div>
+                                                    <strong>${{ active_lease.monthly_rent|floatformat:2 }}</strong>
+                                                    {% if active_lease.monthly_rent != unit.monthly_rent %}
+                                                        <br>
+                                                        <small class="text-muted">Base: ${{ unit.monthly_rent|floatformat:2 }}</small>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        {% else %}
+                                            ${{ unit.monthly_rent|floatformat:2 }}
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if active_lease %}
+                                            <span class="badge bg-danger">Occupied</span>
+                                        {% else %}
+                                            <span class="badge bg-success">Available</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if active_lease %}
+                                            <div class="d-flex align-items-center">
+                                                <i class="fas fa-user-circle text-primary me-2"></i>
+                                                <div>
+                                                    <strong>{{ active_lease.tenant.user.first_name }} {{ active_lease.tenant.user.last_name }}</strong>
+                                                    <br>
+                                                    
+                                                </div>
+                                            </div>
+                                        {% else %}
+                                            <span class="text-muted">No tenant</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if active_lease %}
+                                            <div>
+                                                <div class="d-flex align-items-center mb-1">
+                                                    <i class="fas fa-calendar-alt text-primary me-2"></i>
+                                                    <div>
+                                                        <strong>{{ active_lease.start_date|date:"M d, Y" }} - {{ active_lease.end_date|date:"M d, Y" }}</strong>
+                                                        <br>
+                                                    </div>
+                                                </div>
+                                                <small class="badge {% if active_lease.status == 'active' %}bg-success{% elif active_lease.status == 'pending' %}bg-warning{% else %}bg-danger{% endif %}">
+                                                    {{ active_lease.status|title }}
+                                                </small>
+                                            </div>
+                                        {% else %}
+                                            <span class="text-muted">No active lease</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group">
+                                            {% if not active_lease %}
+                                                <a href="{% url 'properties:lease_agreement_create' property_pk=property.id %}?unit={{ unit.id }}" 
+                                                   class="btn btn-sm btn-outline-success">
+                                                    <i class="fas fa-file-signature"></i> Create Lease
+                                                </a>
+                                            {% else %}
+                                                <a href="{% url 'properties:get_lease_details' lease_id=active_lease.id %}" 
+                                                   class="btn btn-sm btn-outline-primary">
+                                                    <i class="fas fa-eye"></i> View Lease
+                                                </a>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endwith %}
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-3">
+                        <p class="text-muted mb-0">No units added to this property yet.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Tenant Section -->
+    <div class="card shadow mb-4">
+        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Tenants</h5>
+            {% if request.user.is_property_owner and property.owner.user == request.user %}
+            <a href="{% url 'accounts:register_tenant' property_id=property.id %}" class="btn btn-light btn-sm">
+                <i class="fas fa-user-plus"></i> Add Tenant
+            </a>
+            {% endif %}
+        </div>
+        <div class="card-body">
+            {% if property.property_tenants.exists %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Phone</th>
+                                <th>Status</th>
+                                <th>Start Date</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for tenant_property in property.property_tenants.all %}
+                            <tr>
+                                <td>{{ tenant_property.tenant.user.get_full_name }}</td>
+                                <td>{{ tenant_property.tenant.user.email }}</td>
+                                <td>{{ tenant_property.tenant.user.phone_number }}</td>
+                                <td>
+                                    <span class="badge {% if tenant_property.status == 'active' %}bg-success{% elif tenant_property.status == 'pending' %}bg-warning{% else %}bg-danger{% endif %}">
+                                        {{ tenant_property.status|title }}
+                                    </span>
+                                </td>
+                                <td>{{ tenant_property.start_date|date:"M d, Y" }}</td>
+                                <td>
+                                    <div class="btn-group">
+                                        {% if request.user.is_property_owner and property.owner.user == request.user %}
+                                        <button type="button" class="btn btn-sm btn-danger" title="Remove Tenant">
+                                            <i class="fas fa-user-minus"></i>
+                                        </button>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="text-center py-3">
+                    <p class="text-muted mb-0">No tenants registered for this property yet.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Bank Accounts Section -->
+    <div class="card shadow mt-4">
+        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Payment Accounts</h5>
+            <a href="{% url 'properties:bank_account_create' property.pk %}" class="btn btn-light btn-sm">
+                <i class="fas fa-plus"></i> New Account
+            </a>
+        </div>
+        <div class="card-body">
+            {% if property.bank_accounts.exists %}
+                <div class="table-responsive">
+                    <table class="table table-hover" id="bank-accounts-table">
+                        <thead>
+                            <tr>
+                                <th>Title</th>
+                                <th>Account Type</th>
+                                <th>Mode</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for account in property.bank_accounts.all %}
+                            <tr>
+                                <td>{{ account.title }}</td>
+                                <td>{{ account.get_account_type_display }}</td>
+                                <td>{{ account.get_payment_mode_display }}</td>
+                                <td>
+                                    <span class="badge {% if account.is_active %}bg-success{% else %}bg-danger{% endif %}">
+                                        {{ account.is_active|yesno:"Active,Inactive" }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="btn-group">
+                                        <a href="{% url 'properties:bank_account_delete' property.pk account.pk %}" class="btn btn-sm btn-danger">
+                                            <i class="fas fa-trash"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <p id="no-bank-accounts" class="text-center mb-0" style="display: none;">No bank accounts added yet.</p>
+            {% else %}
+                <p class="text-center mb-0">No bank accounts added yet.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Invoices Section -->
+    <div class="card shadow mt-4">
+        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Invoices</h5>
+            {% if request.user.is_property_owner and property.owner.user == request.user %}
+                <div class="btn-group">
+                    {% if invoices %}
+                        <a href="{% url 'properties:invoice_list' %}" class="btn btn-light btn-sm">
+                            <i class="fas fa-list"></i> All Invoices
+                        </a>
+                    {% endif %}
+                    {% if property.leaseagreement_set.exists %}
+                        <a href="{% url 'properties:invoice_create' lease_id=property.leaseagreement_set.first.id %}" class="btn btn-light btn-sm ms-2">
+                            <i class="fas fa-plus"></i> Add Invoice
+                        </a>
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+        <div class="card-body">
+            {% if invoices %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Invoice #</th>
+                                <th>Tenant</th>
+                                <th>Description</th>
+                                <th>Amount</th>
+                                <th>Due Date</th>
+                                <th>Created Date</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for invoice in invoices %}
+                            <tr>
+                                <td>{{ invoice.invoice_number }}</td>
+                                <td>{{ invoice.tenant.user.get_full_name }}</td>
+                                <td>{{ invoice.description|truncatechars:30 }}</td>
+                                <td>${{ invoice.total_amount|floatformat:2 }}</td>
+                                <td>{{ invoice.due_date|date:"M d, Y" }}</td>
+                                <td>{{ invoice.created_at|date:"M d, Y" }}</td>
+                                <td>
+                                    <span class="badge {% if invoice.status == 'paid' %}bg-success{% elif invoice.status == 'pending' %}bg-warning{% elif invoice.status == 'overdue' %}bg-danger{% else %}bg-secondary{% endif %}">
+                                        {{ invoice.status|title }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="btn-group">
+                                        <a href="{% url 'properties:invoice_detail' pk=invoice.id %}" class="btn btn-sm btn-info" title="View Details">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        {% if request.user.is_property_owner and property.owner.user == request.user %}
+                                            <a href="{% url 'properties:invoice_update' pk=invoice.id %}" class="btn btn-sm btn-warning" title="Edit Invoice">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            {% if invoice.status != 'paid' %}
+                                                <a href="{% url 'properties:mark_invoice_paid' pk=invoice.id %}" class="btn btn-sm btn-success" title="Mark as Paid"
+                                                   onclick="return confirm('Are you sure you want to mark this invoice as paid?')">
+                                                    <i class="fas fa-check"></i>
+                                                </a>
+                                            {% endif %}
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="8" class="text-center">No invoices found.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% if invoices.count > 5 %}
+                    <div class="text-center mt-3">
+                        <a href="{% url 'properties:invoice_list' %}" class="btn btn-outline-primary">View All Invoices</a>
+                    </div>
+                {% endif %}
+            {% else %}
+                <div class="text-center py-4">
+                    <p class="text-muted mb-0">No invoices found.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Lease Agreements Section -->
+    <div class="card shadow mt-4">
+        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Lease Agreements</h5>
+            <a href="{% url 'properties:lease_agreement_create' property_pk=property.pk %}" class="btn btn-light btn-sm">
+                <i class="fas fa-plus"></i> New Lease
+            </a>
+        </div>
+        <div class="card-body">
+            {% if property.leaseagreement_set.exists %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Tenant</th>
+                                <th>Unit</th>
+                                <th>Start Date</th>
+                                <th>End Date</th>
+                                <th>Monthly Rent</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for lease in property.leaseagreement_set.all %}
+                            <tr>
+                                <td>{{ lease.tenant.user.get_full_name }}</td>
+                                <td>{{ lease.property_unit.unit_number }}</td>
+                                <td>{{ lease.start_date }}</td>
+                                <td>{{ lease.end_date }}</td>
+                                <td>${{ lease.monthly_rent }}</td>
+                                <td>
+                                    <span class="badge {% if lease.status == 'active' %}bg-success{% elif lease.status == 'pending' %}bg-warning{% else %}bg-danger{% endif %}">
+                                        {{ lease.status|title }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <button class="btn btn-sm btn-info" data-bs-toggle="modal" data-bs-target="#leaseDetailsModal{{ lease.id }}">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    {% if lease.status == 'pending' %}
+                                    <button class="btn btn-sm btn-success change-lease-status" data-lease-id="{{ lease.id }}" data-property-id="{{ property.id }}" data-status="active">
+                                        <i class="fas fa-check"></i> Activate
+                                    </button>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="alert alert-info">
+                    No lease agreements found. Create a new lease to get started.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <script>
+        function deleteBankAccount(button) {
+            if (confirm('Are you sure you want to delete this bank account?')) {
+                const accountId = button.getAttribute('data-account-id');
+                const propertyId = button.getAttribute('data-property-id');
+                const url = `/properties/${propertyId}/bank-accounts/${accountId}/delete/`;
+                const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+                
+                fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': csrfToken,
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    credentials: 'same-origin'
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.status === 'success') {
+                        // Remove the row from the table
+                        button.closest('tr').remove();
+                        // Show success message
+                        alert('Bank account deleted successfully');
+                    } else {
+                        alert('Error deleting bank account: ' + (data.message || 'Unknown error'));
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error deleting bank account. Please try again.');
+                });
+            }
+        }
+    </script>
+
+    <script>
+        // Handle lease status changes
+        document.querySelectorAll('.change-lease-status').forEach(button => {
+            button.addEventListener('click', function(e) {
+                e.preventDefault();
+                const leaseId = this.dataset.leaseId;
+                const propertyId = this.dataset.propertyId;
+                const newStatus = this.dataset.status;
+                
+                if (confirm('Are you sure you want to change the lease status?')) {
+                    // Get CSRF token from cookie
+                    const csrftoken = document.cookie.split('; ')
+                        .find(row => row.startsWith('csrftoken='))
+                        ?.split('=')[1];
+
+                    fetch(`/properties/${propertyId}/lease/${leaseId}/change-status/`, {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRFToken': csrftoken,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ status: newStatus })
+                    })
+                    .then(response => {
+                        if (response.ok) {
+                            window.location.reload();
+                        } else {
+                            alert('Error changing lease status');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('Error changing lease status');
+                    });
+                }
+            });
+        });
+</script>
+</div>
+{% endblock %}

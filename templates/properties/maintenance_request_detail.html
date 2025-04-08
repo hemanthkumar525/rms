@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Maintenance Request Detail - {{ maintenance.title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+            <h6 class="m-0 font-weight-bold text-primary">Maintenance Request Details</h6>
+            <a href="{% url 'properties:maintenance_request_list' %}" class="btn btn-sm btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back to List
+            </a>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5>Basic Information</h5>
+                    <table class="table">
+                        <tr>
+                            <th>Property:</th>
+                            <td>{{ maintenance.property.title }}</td>
+                        </tr>
+                        <tr>
+                            <th>Unit Number:</th>
+                            <td>{{ maintenance.property_unit.unit_number }}</td>
+                        </tr>
+                        <tr>
+                            <th>Issue Title:</th>
+                            <td>{{ maintenance.title }}</td>
+                        </tr>
+                        <tr>
+                            <th>Reported By:</th>
+                            <td>{{ maintenance.reported_by.get_full_name }}</td>
+                        </tr>
+                        <tr>
+                            <th>Reported Date:</th>
+                            <td>{{ maintenance.reported_date|date:"F d, Y H:i" }}</td>
+                        </tr>
+                        <tr>
+                            <th>Status:</th>
+                            <td>
+                                {% if request.user.is_property_owner or request.user.is_superuser %}
+                                <form method="post" action="{% url 'properties:maintenance_request_change_status' maintenance.id %}" class="d-inline">
+                                    {% csrf_token %}
+                                    <select name="status" class="form-select form-select-sm d-inline w-auto" onchange="this.form.submit()">
+                                        {% for value, label in maintenance.STATUS_CHOICES %}
+                                        <option value="{{ value }}" {% if maintenance.status == value %}selected{% endif %}>
+                                            {{ label }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </form>
+                                {% else %}
+                                <span class="badge {% if maintenance.status == 'pending' %}bg-warning
+                                    {% elif maintenance.status == 'in_progress' %}bg-info
+                                    {% elif maintenance.status == 'completed' %}bg-success
+                                    {% else %}bg-danger{% endif %}">
+                                    {{ maintenance.get_status_display }}
+                                </span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>Priority:</th>
+                            <td>
+                                <span class="badge {% if maintenance.priority == 'high' %}bg-danger
+                                    {% elif maintenance.priority == 'medium' %}bg-warning
+                                    {% else %}bg-info{% endif %}">
+                                    {{ maintenance.get_priority_display }}
+                                </span>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+                <div class="col-md-6">
+                    <h5>Request Description</h5>
+                    <div class="card">
+                        <div class="card-body">
+                            <p class="card-text">{{ maintenance.description }}</p>
+                        </div>
+                    </div>
+                    {% if maintenance.resolved_date %}
+                    <div class="mt-3">
+                        <h6>Resolution Date</h6>
+                        <p>{{ maintenance.resolved_date|date:"F d, Y H:i" }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,14 @@
+{% extends 'emails/base_email.html' %}
+
+{% block content %}
+<h2>Welcome to RMS!</h2>
+<p>Dear {{ tenant.user.get_full_name }},</p>
+<p>Your tenant account has been successfully created in our Rental Management System.</p>
+<p>You can now:</p>
+<ul>
+    <li>View your lease agreements</li>
+    <li>Track your rent payments</li>
+    <li>Communicate with your property owner</li>
+</ul>
+<p>Best regards,<br>RMS Team</p>
+{% endblock %}

@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<body>
+    <h2>New Maintenance Request</h2>
+    <p>Dear {{ request.property.owner.user.first_name }},</p>
+    
+    <p>A new maintenance request has been submitted for your property:</p>
+    
+    <div style="margin: 20px 0;">
+        <strong>Property:</strong> {{ property.title }}<br>
+        <strong>Unit:</strong> {{ request.unit.unit_number }}<br>
+        <strong>Tenant:</strong> {{ tenant.user.get_full_name }}<br>
+        <strong>Issue Type:</strong> {{ request.issue_type }}<br>
+        <strong>Description:</strong> {{ request.description }}<br>
+        <strong>Priority:</strong> {{ request.priority }}<br>
+        <strong>Submitted:</strong> {{ request.created_at|date:"F j, Y" }}
+    </div>
+
+    <p>Please review this request at your earliest convenience.</p>
+    
+    <p>Best regards,<br>RMS Team</p>
+</body>
+</html>

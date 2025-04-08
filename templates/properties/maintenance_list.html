@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <h1 class="mt-4">Maintenance Requests</h1>
+    
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <i class="fas fa-tools me-1"></i>
+            Maintenance Requests
+            {% if request.user.is_tenant %}
+            <a href="{% url 'properties:maintenance_request_select_unit' %}" class="btn btn-light btn-sm float-end">
+                <i class="fas fa-plus"></i> New Request
+            </a>
+            {% endif %}
+        </div>
+        <div class="card-body">
+            {% if maintenance_requests %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Property</th>
+                            <th>Unit</th>
+                            <th>Title</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for request in maintenance_requests %}
+                        <tr>
+                            <td>{{ request.reported_date|date:"F d, Y H:i" }}</td>
+                            <td>{{ request.property.title }}</td>
+                            <td>{{ request.property_unit.unit_number }}</td>
+                            <td>{{ request.title }}</td>
+                            <td>
+                                {% if user.is_property_owner or user.is_superuser %}
+                                <form method="post" action="{% url 'properties:maintenance_request_change_status' request.id %}" class="d-inline">
+                                    {% csrf_token %}
+                                    <select name="status" class="form-select form-select-sm d-inline w-auto" onchange="this.form.submit()">
+                                        {% for value, label in request.STATUS_CHOICES %}
+                                        <option value="{{ value }}" {% if request.status == value %}selected{% endif %}>
+                                            {{ label }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </form>
+                                {% else %}
+                                <span class="badge {% if request.status == 'pending' %}bg-warning
+                                    {% elif request.status == 'in_progress' %}bg-info
+                                    {% elif request.status == 'completed' %}bg-success
+                                    {% else %}bg-danger{% endif %}">
+                                    {{ request.get_status_display }}
+                                </span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{% url 'properties:maintenance_request_detail' request.id %}" class="btn btn-sm btn-info">
+                                    <i class="fas fa-eye"></i> View
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-4">
+                <p class="lead">No maintenance requests found</p>
+                {% if request.user.is_tenant %}
+                <a href="{% url 'properties:maintenance_request_select_unit' %}" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Create First Request
+                </a>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
