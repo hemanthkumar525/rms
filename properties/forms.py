@@ -8,9 +8,18 @@ from .models import *
 from decimal import Decimal
 
 class PropertyForm(forms.ModelForm):
+    images = forms.ImageField(
+        required=False,
+        widget=forms.ClearableFileInput(attrs={
+            'class': 'form-control',
+            'accept': 'image/*',
+            'multiple': False
+        })
+    )
+
     class Meta:
         model = Property
-        fields = ['title', 'property_type', 'address', 'city', 'state', 'postal_code', 'description']
+        fields = ['title', 'property_type', 'address', 'city', 'state', 'postal_code', 'description', 'images']
         widgets = {
             'description': forms.Textarea(attrs={'rows': 3}),
             'address': forms.Textarea(attrs={'rows': 2}),
@@ -19,7 +28,7 @@ class PropertyForm(forms.ModelForm):
             'bedrooms': forms.NumberInput(attrs={'min': 0}),
             'bathrooms': forms.NumberInput(attrs={'min': 0, 'step': '0.5'}),
         }
-        
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.helper = FormHelper()
@@ -31,21 +40,33 @@ class PropertyForm(forms.ModelForm):
             ),
             Row(
                 Column('address', css_class='col-md-12'),
-
             ),
             Row(
                 Column('city', css_class='col-md-4'),
                 Column('state', css_class='col-md-4'),
                 Column('postal_code', css_class='col-md-4'),
             ),
-            'description',
+            Row(
+                Column('description', css_class='col-md-8'),
+                Column('images', css_class='col-md-4'),
+            ),
         )
-        
+
         for field in self.fields.values():
             field.widget.attrs['class'] = 'form-control'
-            
-        # Add help text
-        
+
+    def save(self, commit=True):
+        property_instance = super().save(commit=commit)
+
+        if commit and self.cleaned_data.get('images'):
+            for image in self.files.getlist('images'):
+                PropertyImage.objects.create(
+                    property=property_instance,
+                    image=image
+                )
+
+        return property_instance
+
 class PropertyImageForm(forms.ModelForm):
     class Meta:
         model = PropertyImage
@@ -70,7 +91,7 @@ class CommercialUnitForm(forms.ModelForm):
         for field in self.fields.values():
             if not isinstance(field.widget, (forms.CheckboxInput, forms.HiddenInput)):
                 field.widget.attrs['class'] = 'form-control'
-        
+
         # Add help text
         self.fields['unit_number'].help_text = 'Unique identifier for this commercial unit'
         self.fields['monthly_rent'].help_text = 'Monthly rental amount for this unit'
@@ -85,7 +106,7 @@ class CommercialUnitForm(forms.ModelForm):
         cleaned_data['bedrooms'] = 0
         cleaned_data['bathrooms'] = 0
         return cleaned_data
-    
+
     class Meta:
         model = PropertyUnit
         fields = ['unit_number', 'monthly_rent', 'square_feet', 'is_available', 'business_type', 'bedrooms', 'bathrooms']
@@ -102,7 +123,7 @@ class PropertyUnitForm(forms.ModelForm):
         for field in self.fields.values():
             if not isinstance(field.widget, forms.CheckboxInput):
                 field.widget.attrs['class'] = 'form-control'
-        
+
         # Add help text
         self.fields['unit_number'].help_text = 'Unique identifier for this residential unit'
         self.fields['monthly_rent'].help_text = 'Monthly rental amount for this unit'
@@ -129,7 +150,7 @@ class PropertyUnitForm(forms.ModelForm):
 
     class Meta:
         model = PropertyUnit
-        fields = ['unit_number', 'monthly_rent', 'bedrooms', 
+        fields = ['unit_number', 'monthly_rent', 'bedrooms',
                  'bathrooms', 'kitchen', 'square_feet']
         widgets = {
             'bathrooms': forms.NumberInput(attrs={'min': 0, 'step': '0.5'}),
@@ -144,7 +165,7 @@ class LeaseAgreementForm(forms.ModelForm):
         required=True,
         widget=forms.Select(attrs={'class': 'form-control'})
     )
-    
+
     property_unit = forms.ModelChoiceField(
         queryset=PropertyUnit.objects.none(),
         required=True,
@@ -153,7 +174,7 @@ class LeaseAgreementForm(forms.ModelForm):
             'placeholder': 'Select Unit'
         })
     )
-    
+
     tenant = forms.ModelChoiceField(
         queryset=Tenant.objects.none(),
         required=True,
@@ -197,7 +218,7 @@ class LeaseAgreementForm(forms.ModelForm):
         # Extract property from kwargs before calling super()
         self.property = kwargs.pop('property', None)
         super().__init__(*args, **kwargs)
-        
+
         if self.property:
             # Filter available units for this property
             self.fields['property_unit'].queryset = self.property.units.filter(
@@ -209,7 +230,7 @@ class LeaseAgreementForm(forms.ModelForm):
                     status='active'
                 ).values('property_unit_id')
             )
-            
+
             # Filter only tenants that have an active TenantProperty relationship with this property
             self.fields['tenant'].queryset = Tenant.objects.filter(
                 tenant_properties__property=self.property,
@@ -222,22 +243,22 @@ class LeaseAgreementForm(forms.ModelForm):
                     status='active'
                 ).values('tenant_id')
             )
-            
+
             # Filter active bank accounts for this property
             self.fields['bank_account'].queryset = self.property.bank_accounts.filter(
                 status='Active'
             )
-    
+
     def clean(self):
         cleaned_data = super().clean()
         property_unit = cleaned_data.get('property_unit')
         tenant = cleaned_data.get('tenant')
-        
+
         if property_unit and tenant:
             # Check if the unit is still available
             if not property_unit.is_available:
                 raise forms.ValidationError("This unit is no longer available.")
-            
+
             # Check if tenant already has an active lease in this property
             if LeaseAgreement.objects.filter(
                 property_unit__property=self.property,
@@ -245,7 +266,7 @@ class LeaseAgreementForm(forms.ModelForm):
                 status='active'
             ).exists():
                 raise forms.ValidationError("This tenant already has an active lease in this property.")
-        
+
         return cleaned_data
 
 class PropertyMaintenanceForm(forms.ModelForm):
@@ -254,7 +275,7 @@ class PropertyMaintenanceForm(forms.ModelForm):
         ('medium', 'Medium - Issues affecting comfort but not safety'),
         ('high', 'High - Urgent issues affecting safety or habitability')
     ]
-    
+
     title = forms.CharField(
         widget=forms.TextInput(attrs={'class': 'form-control'}),
         help_text='Brief title for the maintenance issue'
@@ -284,7 +305,7 @@ class PropertyMaintenanceForm(forms.ModelForm):
         widget=forms.Textarea(attrs={'rows': 2}),
         help_text='Any additional notes or special instructions'
     )
-    
+
     class Meta:
         model = PropertyMaintenance
         fields = ['title', 'description', 'priority', 'photos', 'preferred_time', 'tenant_notes']
@@ -297,7 +318,7 @@ class PropertyMaintenanceForm(forms.ModelForm):
                 field.widget.attrs['class'] = 'form-control'
             else:
                 field.widget.attrs['class'] = 'form-check-input'
-                
+
     def clean_photos(self):
         photos = self.cleaned_data.get('photos')
         if photos:
@@ -320,7 +341,7 @@ class PropertySearchForm(forms.Form):
         ('4000-5000', '$4,000 - $5,000'),
         ('5000+', '$5,000+')
     ]
-    
+
     keyword = forms.CharField(required=False, widget=forms.TextInput(
         attrs={'class': 'form-control', 'placeholder': 'Search by keyword...'}
     ))
@@ -373,12 +394,12 @@ class BankAccountForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         self.property = kwargs.pop('property', None)
         super().__init__(*args, **kwargs)
-        
+
         # Set default form field classes
         for field in self.fields.values():
             if not isinstance(field.widget, forms.RadioSelect):
                 field.widget.attrs['class'] = 'form-control'
-        
+
         # Set choices for account type based on property settings
         if self.property:
             self.fields['account_type'].choices = [

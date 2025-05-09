@@ -15,7 +15,7 @@ class Payment(models.Model):
         ('failed', 'Failed'),
         ('refunded', 'Refunded'),
     )
-    
+
     PAYMENT_TYPE_CHOICES = (
         ('rent', 'Rent'),
         ('security_deposit', 'Security Deposit'),
@@ -23,21 +23,21 @@ class Payment(models.Model):
         ('late_fee', 'Late Fee'),
         ('subscription', 'Subscription'),
     )
-    
-    lease_agreement = models.ForeignKey(LeaseAgreement, on_delete=models.CASCADE)
+
+    lease_agreement = models.ForeignKey(LeaseAgreement, on_delete=models.CASCADE, null=True, blank=True)
     payment_type = models.CharField(max_length=20, choices=PAYMENT_TYPE_CHOICES)
     amount = models.DecimalField(max_digits=10, decimal_places=2)
-    due_date = models.DateField()
+    due_date = models.DateField(null=True, blank=True)
     payment_date = models.DateTimeField(null=True, blank=True)
     status = models.CharField(max_length=20, choices=PAYMENT_STATUS_CHOICES, default='pending')
     payment_method = models.CharField(max_length=50, blank=True)
-    transaction_id = models.CharField(max_length=100, blank=True)
-    stripe_payment_intent_id = models.CharField(max_length=100, blank=True)
-    stripe_payment_method_id = models.CharField(max_length=100, blank=True)
+    transaction_id = models.CharField(max_length=100, null=True, blank=True)
+    stripe_payment_intent_id = models.CharField(max_length=100,null=True, blank=True)
+    stripe_payment_method_id = models.CharField(max_length=100,null=True, blank=True)
     paid_by = models.ForeignKey(CustomUser, on_delete=models.SET_NULL, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    
+
     def __str__(self):
         return f"{self.payment_type} - {self.lease_agreement.property.title if self.lease_agreement else 'Subscription'}"
 
@@ -49,7 +49,7 @@ class PaymentReminder(models.Model):
     reminder_date = models.DateField()
     is_sent = models.BooleanField(default=False)
     sent_date = models.DateTimeField(null=True, blank=True)
-    
+
     def __str__(self):
         return f"Reminder for {self.payment}"
 
@@ -68,13 +68,13 @@ class Invoice(models.Model):
     )
 
     lease_agreement = models.ForeignKey(
-        LeaseAgreement, 
-        on_delete=models.CASCADE, 
+        LeaseAgreement,
+        on_delete=models.CASCADE,
         related_name='lease_invoices'
     )
     property = models.ForeignKey(
-        Property, 
-        on_delete=models.CASCADE, 
+        Property,
+        on_delete=models.CASCADE,
         related_name='property_invoices'
     )
     property_unit = models.ForeignKey(
@@ -83,8 +83,8 @@ class Invoice(models.Model):
         related_name='unit_invoices'
     )
     tenant = models.ForeignKey(
-        Tenant, 
-        on_delete=models.CASCADE, 
+        Tenant,
+        on_delete=models.CASCADE,
         related_name='tenant_invoices'
     )
     invoice_number = models.CharField(max_length=50, unique=True)
@@ -120,11 +120,11 @@ class Invoice(models.Model):
                 self.property_unit = self.lease_agreement.property_unit
             if self.lease_agreement and not self.tenant:
                 self.tenant = self.lease_agreement.tenant
-            
+
             # Calculate total amount
             if not self.total_amount:
                 self.total_amount = self.amount + self.late_fee
-                
+
         super().save(*args, **kwargs)
 
     def generate_payment_url(self, request=None):

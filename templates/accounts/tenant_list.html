@@ -18,7 +18,7 @@
                 </div>
                 {% if user.is_property_owner %}
                 <div class="mt-3 mt-sm-0">
-                    
+
                 </div>
                 {% endif %}
             </div>
@@ -31,7 +31,7 @@
             <form method="get" class="row g-3">
                 <div class="col-md-4">
                     <div class="form-floating">
-                        <input type="text" class="form-control" id="search" name="search" 
+                        <input type="text" class="form-control" id="search" name="search"
                                placeholder="Search tenants...">
                         <label for="search"><i class="fas fa-search text-muted me-2"></i>Search</label>
                     </div>
@@ -66,7 +66,7 @@
         </div>
     </div>
 
-    <!-- Stats Cards -->
+    <!-- Stats Cards>
     <div class="row g-4 mb-4">
         <div class="col-sm-6 col-xl-3 animate__animated animate__fadeInUp" style="animation-delay: 200ms">
             <div class="card border-0 shadow-lg hover-lift">
@@ -88,7 +88,7 @@
                 </div>
             </div>
         </div>
-        
+
         <div class="col-sm-6 col-xl-3 animate__animated animate__fadeInUp" style="animation-delay: 300ms">
             <div class="card border-0 shadow-lg hover-lift">
                 <div class="card-body">
@@ -109,7 +109,7 @@
                 </div>
             </div>
         </div>
-        
+
         <div class="col-sm-6 col-xl-3 animate__animated animate__fadeInUp" style="animation-delay: 400ms">
             <div class="card border-0 shadow-lg hover-lift">
                 <div class="card-body">
@@ -130,7 +130,7 @@
                 </div>
             </div>
         </div>
-        
+
         <div class="col-sm-6 col-xl-3 animate__animated animate__fadeInUp" style="animation-delay: 500ms">
             <div class="card border-0 shadow-lg hover-lift">
                 <div class="card-body">
@@ -151,7 +151,7 @@
                 </div>
             </div>
         </div>
-    </div>
+    </div-->
 
     <!-- Tenant List -->
     <div class="card border-0 shadow-lg animate__animated animate__fadeInUp" style="animation-delay: 600ms">
@@ -165,77 +165,74 @@
                             <th class="border-0">Property</th>
                             <th class="border-0">Lease Status</th>
                             <th class="border-0">Payment Status</th>
-                            <th class="border-0 text-end pe-4">Actions</th>
+                            <!--th class="border-0 text-end pe-4">Actions</th-->
                         </tr>
                     </thead>
                     <tbody>
-                        {% for tenant in tenants %}
-                        <tr>
-                            <td class="ps-4">
-                                <div class="d-flex align-items-center">
-                                    <div class="avatar avatar-md bg-primary-soft rounded-circle">
-                                        {% if tenant.user.profile_picture %}
-                                            <img src="{{ tenant.user.profile_picture.url }}" 
-                                                 class="rounded-circle" alt="{{ tenant.user.get_full_name }}"
-                                                 style="width: 40px; height: 40px; object-fit: cover;">
-                                        {% else %}
-                                            <i class="fas fa-user text-primary"></i>
-                                        {% endif %}
+                        {% for entry in tenant_data %}
+                            {% for lease in entry.leases %}
+                            <tr>
+                                {% if forloop.first %}
+                                <td class="ps-4" rowspan="{{ entry.leases|length }}">
+                                    <div class="d-flex align-items-center">
+                                        <div class="avatar avatar-md bg-primary-soft rounded-circle">
+                                            {% if entry.tenant.user.profile_picture %}
+                                                <img src="{{ entry.tenant.user.profile_picture.url }}"
+                                                     class="rounded-circle" alt="{{ entry.tenant.user.get_full_name }}"
+                                                     style="width: 40px; height: 40px; object-fit: cover;">
+                                            {% else %}
+                                                <i class="fas fa-user text-primary"></i>
+                                            {% endif %}
+                                        </div>
+                                        <div class="ms-3">
+                                            <h6 class="mb-0">{{ entry.tenant.user.get_full_name }}</h6>
+                                            <small class="text-muted">Joined {{ entry.tenant.user.date_joined|date:"M d, Y" }}</small>
+                                        </div>
                                     </div>
-                                    <div class="ms-3">
-                                        <h6 class="mb-0">{{ tenant.user.get_full_name }}</h6>
-                                        <small class="text-muted">Joined {{ tenant.user.date_joined|date:"M d, Y" }}</small>
+                                </td>
+                                <td rowspan="{{ entry.leases|length }}">
+                                    <div>
+                                        <h6 class="mb-0">{{ entry.tenant.user.email }}</h6>
+                                        <small class="text-muted">{{ entry.tenant.phone_number }}</small>
                                     </div>
-                                </div>
-                            </td>
-                            <td>
-                                <div>
-                                    <h6 class="mb-0">{{ tenant.user.email }}</h6>
-                                    <small class="text-muted">{{ tenant.phone_number }}</small>
-                                </div>
-                            </td>
-                            <td>
-                                {% if tenant.current_lease %}
-                                <div>
-                                    <h6 class="mb-0">{{ tenant.current_lease.property.title }}</h6>
-                                    <small class="text-muted">Unit {{ tenant.current_lease.unit.number }}</small>
-                                </div>
-                                {% else %}
-                                <span class="text-muted">No active lease</span>
+                                </td>
                                 {% endif %}
-                            </td>
-                            <td>
-                                {% if tenant.current_lease %}
-                                    {% if tenant.current_lease.is_active %}
+                                <td>
+                                    <div>
+                                        <h6 class="mb-0">{{ lease.property }}</h6>
+                                        <small class="text-muted">Unit {{ lease.unit }}</small>
+                                    </div>
+                                </td>
+                                <td>
+                                    {% if lease.lease_status == 'Active' %}
                                         <span class="badge bg-success-soft text-success">Active</span>
-                                    {% elif tenant.current_lease.is_expired %}
-                                        <span class="badge bg-danger-soft text-danger">Expired</span>
+                                    {% elif lease.lease_status == 'Inactive' %}
+                                        <span class="badge bg-secondary-soft text-secondary">Inactive</span>
                                     {% else %}
                                         <span class="badge bg-warning-soft text-warning">Pending</span>
                                     {% endif %}
-                                {% else %}
-                                    <span class="badge bg-secondary-soft text-secondary">No Lease</span>
+                                </td>
+                                <td>
+                                    {% if lease.payment_status == 'paid' %}
+                                        <span class="badge bg-success-soft text-success">Paid</span>
+                                    {% elif lease.payment_status == 'partial' %}
+                                        <span class="badge bg-warning-soft text-warning">Partial</span>
+                                    {% else %}
+                                        <span class="badge bg-danger-soft text-danger">Unpaid</span>
+                                    {% endif %}
+                                </td>
+                                {% if forloop.first %}
+                                <td class="text-end pe-4" rowspan="{{ entry.leases|length }}">
+                                    {% if user.is_property_owner %}
+                                    <!-- Future Action Buttons -->
+                                     <!--a class="btn btn-primary btn-sm" href="#">
+                                        <i class="fas fa-ellipsis-v"></i>
+                                     </a-->
+                                    {% endif %}
+                                </td>
                                 {% endif %}
-                            </td>
-                            <td>
-                                {% if tenant.payment_status == 'paid' %}
-                                    <span class="badge bg-success-soft text-success">Paid</span>
-                                {% elif tenant.payment_status == 'partial' %}
-                                    <span class="badge bg-warning-soft text-warning">Partial</span>
-                                {% else %}
-                                    <span class="badge bg-danger-soft text-danger">Unpaid</span>
-                                {% endif %}
-                            </td>
-                            <td class="text-end pe-4">
-                                {% if user.is_property_owner %}
-                                <a href="{% url 'payments:payment_create_view' %}?tenant={{ tenant.id }}" 
-                                   class="btn btn-sm btn-light hover-lift"
-                                   data-bs-toggle="tooltip" title="Record Payment">
-                                    <i class="fas fa-money-bill"></i>
-                                </a>
-                                {% endif %}
-                            </td>
-                        </tr>
+                            </tr>
+                            {% endfor %}
                         {% empty %}
                         <tr>
                             <td colspan="6" class="text-center py-5">
@@ -264,7 +261,7 @@
                     </a>
                 </li>
             {% endif %}
-            
+
             {% for num in page_obj.paginator.page_range %}
                 {% if page_obj.number == num %}
                     <li class="page-item active">
@@ -276,7 +273,7 @@
                     </li>
                 {% endif %}
             {% endfor %}
-            
+
             {% if page_obj.has_next %}
                 <li class="page-item">
                     <a class="page-link hover-lift" href="?page={{ page_obj.next_page_number }}">
@@ -297,7 +294,7 @@
     .bg-warning-soft { background-color: rgba(217, 119, 6, 0.1); }
     .bg-danger-soft { background-color: rgba(220, 38, 38, 0.1); }
     .bg-secondary-soft { background-color: rgba(107, 114, 128, 0.1); }
-    
+
     .avatar {
         width: 40px;
         height: 40px;
@@ -305,28 +302,28 @@
         align-items: center;
         justify-content: center;
     }
-    
+
     .avatar-lg {
         width: 48px;
         height: 48px;
     }
-    
+
     .hover-lift {
         transition: transform 0.2s ease;
     }
-    
+
     .hover-lift:hover {
         transform: translateY(-2px);
     }
-    
+
     .table > :not(caption) > * > * {
         padding: 1rem;
     }
-    
+
     .form-floating > .form-control::placeholder {
         color: transparent;
     }
-    
+
     .form-floating > .form-control:focus,
     .form-floating > .form-control:not(:placeholder-shown) {
         padding-top: 1.625rem;
@@ -343,18 +340,18 @@
         var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
             return new bootstrap.Tooltip(tooltipTriggerEl)
         });
-        
+
         // Initialize floating labels
         const inputs = document.querySelectorAll('.form-control, .form-select');
         inputs.forEach(input => {
             if (input.value) {
                 input.parentElement.classList.add('focused');
             }
-            
+
             input.addEventListener('focus', function() {
                 this.parentElement.classList.add('focused');
             });
-            
+
             input.addEventListener('blur', function() {
                 if (!this.value) {
                     this.parentElement.classList.remove('focused');

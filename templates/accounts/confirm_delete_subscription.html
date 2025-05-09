@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+
+{% block content %}
+  <h2>Confirm Delete</h2>
+
+  {% if is_in_use %}
+    <div class="alert alert-warning">
+      This subscription is currently active for one or more property owners and cannot be deleted.
+    </div>
+    <a href="{% url 'accounts:dashboard' %}" class="btn btn-secondary">Back to Dashboard</a>
+  {% else %}
+    <p>Are you sure you want to delete the subscription package <strong>{{ subscription.name }}</strong>?</p>
+
+    <form method="post">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-danger">Yes, delete</button>
+      <a href="{% url 'accounts:dashboard' %}" class="btn btn-secondary">Cancel</a>
+    </form>
+  {% endif %}
+{% endblock %}

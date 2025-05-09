@@ -16,13 +16,13 @@ class PaymentForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
-        
+
         # Filter lease agreements based on user role
         if user and user.is_property_owner:
             self.fields['lease_agreement'].queryset = LeaseAgreement.objects.filter(
                 property__owner=user.propertyowner
             )
-        
+
         self.helper = FormHelper()
         self.helper.layout = Layout(
             Row(
@@ -82,7 +82,7 @@ class PaymentFilterForm(forms.Form):
     def __init__(self, *args, **kwargs):
         user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
-        
+
         # Filter properties based on user role
         if user:
             if user.is_property_owner:
@@ -111,10 +111,10 @@ class PaymentFilterForm(forms.Form):
         cleaned_data = super().clean()
         start_date = cleaned_data.get('start_date')
         end_date = cleaned_data.get('end_date')
-        
+
         if start_date and end_date and start_date > end_date:
             raise forms.ValidationError("End date must be after start date")
-        
+
         return cleaned_data
 
 class PaymentListForm(forms.Form):
@@ -132,14 +132,14 @@ class PaymentListForm(forms.Form):
         required=False,
         widget=forms.Select(attrs={'class': 'form-select'})
     )
-    
+
     property = forms.ModelChoiceField(
         queryset=Property.objects.all(),
         required=False,
         empty_label="All Properties",
         widget=forms.Select(attrs={'class': 'form-select'})
     )
-    
+
     date_from = forms.DateField(
         required=False,
         widget=forms.DateInput(attrs={
@@ -147,7 +147,7 @@ class PaymentListForm(forms.Form):
             'type': 'date'
         })
     )
-    
+
     date_to = forms.DateField(
         required=False,
         widget=forms.DateInput(attrs={
@@ -155,7 +155,7 @@ class PaymentListForm(forms.Form):
             'type': 'date'
         })
     )
-    
+
     search = forms.CharField(
         required=False,
         widget=forms.TextInput(attrs={
@@ -238,7 +238,7 @@ class BulkUploadForm(forms.Form):
     def __init__(self, *args, **kwargs):
         user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
-        
+
         # Filter properties based on user role
         if user and user.is_property_owner:
             self.fields['property'].queryset = Property.objects.filter(owner=user.propertyowner)
@@ -261,8 +261,8 @@ class InvoiceForm(forms.ModelForm):
     class Meta:
         model = Invoice
         fields = [
-            'lease_agreement', 'property_unit', 'tenant','invoice_number',
-            'amount', 'payment_type', 'description', 
+            'lease_agreement', 'property_unit', 'tenant', 'invoice_number',
+            'amount', 'payment_type', 'description',
             'due_date', 'late_fee', 'bank_account'
         ]
         widgets = {
@@ -272,43 +272,53 @@ class InvoiceForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         user = kwargs.pop('user', None)
+        lease = kwargs.pop('lease', None)  # 👈 Accept lease here
         super().__init__(*args, **kwargs)
-        
-        # Filter querysets based on user role
-        if user and user.is_property_owner:
-            # Get all lease agreements for this property owner
-            lease_agreements = LeaseAgreement.objects.filter(
+
+        if lease:
+            # Restrict lease_agreement to only this lease
+            self.fields['lease_agreement'].queryset = LeaseAgreement.objects.filter(id=lease.id)
+            self.fields['lease_agreement'].initial = lease
+
+            # Restrict property_unit to lease's unit
+            self.fields['property_unit'].queryset = PropertyUnit.objects.filter(id=lease.property_unit.id)
+            self.fields['property_unit'].initial = lease.property_unit
+
+            # Restrict tenant to lease's tenant
+            self.fields['tenant'].queryset = Tenant.objects.filter(id=lease.tenant.id)
+            self.fields['tenant'].initial = lease.tenant
+
+            # ✅ Restrict bank accounts to the lease’s property
+            self.fields['bank_account'].queryset = BankAccount.objects.filter(
+                property=lease.property,
+                status='Active'
+            )
+        elif user and user.is_property_owner:
+            # Fallback in case lease is not passed
+            self.fields['lease_agreement'].queryset = LeaseAgreement.objects.filter(
                 property__owner=user.propertyowner
             )
-            self.fields['lease_agreement'].queryset = lease_agreements
-            
-            # Get all property units for this property owner
             self.fields['property_unit'].queryset = PropertyUnit.objects.filter(
                 property__owner=user.propertyowner
             )
-            
-            # Get all tenants who have lease agreements with this property owner
             self.fields['tenant'].queryset = Tenant.objects.filter(
                 leaseagreement__property__owner=user.propertyowner
             ).distinct()
-
-            # Filter bank accounts
             self.fields['bank_account'].queryset = BankAccount.objects.filter(
-                property__owner=user.propertyowner
+                property__owner=user.propertyowner,
+                status='Active'
             )
-            
-        # Add select2 classes for better dropdown UI
-        self.fields['lease_agreement'].widget.attrs['class'] = 'select2'
-        self.fields['property_unit'].widget.attrs['class'] = 'select2'
-        self.fields['tenant'].widget.attrs['class'] = 'select2'
-        self.fields['bank_account'].widget.attrs['class'] = 'select2'
-        
-        # Add crispy form layout
+
+        self.fields['bank_account'].required = True
+
+        # Add Select2 classes
+        for field in ['lease_agreement', 'property_unit', 'tenant', 'bank_account']:
+            self.fields[field].widget.attrs['class'] = 'select2'
+
+        # Crispy Form Layout
         self.helper = FormHelper()
         self.helper.layout = Layout(
-            Row(
-                Column('lease_agreement', css_class='form-group col-md-12'),
-            ),
+            Row(Column('lease_agreement', css_class='form-group col-md-12')),
             Row(
                 Column('property_unit', css_class='form-group col-md-6'),
                 Column('tenant', css_class='form-group col-md-6'),
@@ -332,15 +342,25 @@ class InvoiceForm(forms.ModelForm):
         lease_agreement = cleaned_data.get('lease_agreement')
         property_unit = cleaned_data.get('property_unit')
         tenant = cleaned_data.get('tenant')
+        bank_account = cleaned_data.get('bank_account')
 
         if lease_agreement:
-            # Ensure property unit and tenant match lease agreement
             if property_unit and property_unit != lease_agreement.property_unit:
                 raise forms.ValidationError('Property unit must match the lease agreement.')
             if tenant and tenant != lease_agreement.tenant:
                 raise forms.ValidationError('Tenant must match the lease agreement.')
 
+        if not bank_account:
+            raise forms.ValidationError('Please select a valid bank account.')
+
+        if not bank_account.secret_key:
+            raise forms.ValidationError('The selected bank account is missing a secret key.')
+
         return cleaned_data
+
+
+
+
 
 class InvoiceFilterForm(forms.Form):
     status = forms.ChoiceField(
@@ -372,10 +392,10 @@ class InvoiceFilterForm(forms.Form):
     def __init__(self, *args, **kwargs):
         user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
-        
+
         if user and user.is_property_owner:
             self.fields['property'].queryset = Property.objects.filter(owner=user.propertyowner)
-        
+
         self.helper = FormHelper()
         self.helper.form_method = 'get'
         self.helper.layout = Layout(

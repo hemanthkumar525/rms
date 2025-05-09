@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-4">
+    <h4>Select Lease to Create Invoice</h4>
+
+    <form method="post">
+        {% csrf_token %}
+        <div class="form-group">
+            <label for="lease_id">Active Lease Agreements:</label>
+            <select name="lease_id" id="lease_id" class="form-control select2" required>
+                <option value="">-- Select a lease --</option>
+                {% for lease in active_leases %}
+                    <option value="{{ lease.id }}">
+                        {{ lease.tenant.user.get_full_name }} - Unit: {{ lease.property_unit.unit_number }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+        <button type="submit" class="btn btn-primary mt-3">Continue to Invoice</button>
+    </form>
+</div>
+{% endblock %}

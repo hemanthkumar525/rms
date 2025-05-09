@@ -5,20 +5,19 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Rental Management System{% endblock %}</title>
-    
+
     <!-- Favicon -->
-    <link rel="icon" type="image/png" sizes="32x32" href="{% static 'img/favicon.png' %}">
-    <link rel="icon" type="image/png" sizes="16x16" href="{% static 'img/favicon.png' %}">
-    <link rel="shortcut icon" href="{% static 'img/favicon.png' %}">
-    <link rel="apple-touch-icon" href="{% static 'img/favicon.png' %}">
-    
+    <link rel="icon" href="{% static 'img/favicon1.png' %}" sizes="32x32" type="image/png" />
+    <link rel="shortcut icon" href="{% static 'img/favicon1.png' %}">
+    <link rel="apple-touch-icon" href="{% static 'img/favicon1.png' %}">
+
     <!-- Modern UI Dependencies -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="https://cdn.datatables.net/1.13.5/css/dataTables.bootstrap5.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" rel="stylesheet">
-    
+
     <style>
         :root {
             --primary-color: #96351e;
@@ -36,7 +35,7 @@
             --gray-800: #1f2937;
             --gray-900: #111827;
         }
-        
+
         .bg-primary {
             background-color: var(--bs-primary) !important;
         }
@@ -46,7 +45,7 @@
             background-color: var(--gray-50);
             color: var(--gray-800);
         }
-        
+
         .sidebar {
             position: fixed;
             top: 0;
@@ -60,56 +59,55 @@
             background: white;
             width: 250px;
         }
-        
+
         /* Logo Styles */
         .logo-container {
             padding: 1.5rem 1rem;
             margin-bottom: 1rem;
-            text-align: center; 
+            text-align: center;
         }
 
-        
+
         .logo-img {
-            width: 90px;
-            height: 90px;
+            width: 100px;
+            height: auto;
             object-fit: contain;
             margin: 0 auto;
-            display: block;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+
         }
-        
+
         .logo-text {
             color: var(--gray-900);
             font-weight: 700;
             font-size: 1.25rem;
             letter-spacing: -0.025em;
         }
-        
+
         .logo-subtext {
             color: var(--gray-700);
             font-size: 0.875rem;
             font-weight: 500;
         }
-        
+
         .main-content {
             margin-left: 250px;
             padding: 1rem;
             overflow-y: auto;
             height: 100vh;
         }
-        
+
         @media (max-width: 768px) {
             .main-content {
                 margin-left: 0;
             }
-            
+
             .sidebar {
                 position: static;
                 height: auto;
                 min-height: auto;
             }
         }
-        
+
         .sidebar .nav-link {
             color: var(--primary-color);
             padding: 0.875rem 1.25rem;
@@ -120,103 +118,103 @@
             display: flex;
             align-items: center;
         }
-        
+
         .sidebar .nav-link:hover {
             color: var(--primary-color);
             background-color: rgba(37, 99, 235, 0.1);
         }
-        
+
         .sidebar .nav-link.active {
             color: white;
             background-color: var(--primary-color);
             font-weight: 600;
         }
-        
+
         .sidebar .nav-link i {
             margin-right: 0.75rem;
             width: 1.25rem;
             text-align: center;
             font-size: 1.1rem;
         }
-        
+
         .topbar {
             background-color: white;
             box-shadow: 0 1px 3px 0 rgba(0,0,0,0.1), 0 1px 2px -1px rgba(0,0,0,0.1);
         }
-        
+
         .navbar-brand {
             font-weight: 600;
             font-size: 1.25rem;
             color: var(--gray-900);
         }
-        
+
         .card {
             border: none;
             border-radius: 0.75rem;
             box-shadow: 0 1px 3px 0 rgba(0,0,0,0.1), 0 1px 2px -1px rgba(0,0,0,0.1);
             transition: transform 0.2s ease, box-shadow 0.2s ease;
         }
-        
+
         .card:hover {
             transform: translateY(-2px);
             box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -2px rgba(0,0,0,0.1);
         }
-        
+
         .btn {
             font-weight: 500;
             padding: 0.625rem 1.25rem;
             border-radius: 0.5rem;
             transition: all 0.2s ease;
         }
-        
+
         .btn-primary {
             background-color: var(--primary-color);
             border-color: var(--primary-color);
         }
-        
+
         .btn-primary:hover {
             background-color: var(--hover);
             border-color: var(--hover);
             transform: translateY(-1px);
         }
-        
+
         .form-control {
             border-radius: 0.5rem;
             padding: 0.625rem 1rem;
             border-color: var(--gray-200);
         }
-        
+
         .form-control:focus {
             border-color: var(--primary-color);
             box-shadow: 0 0 0 2px rgba(37,99,235,0.2);
         }
-        
+
         .dropdown-menu {
             border: none;
             border-radius: 0.75rem;
             box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.1);
         }
-        
+
         .dropdown-item {
             padding: 0.625rem 1rem;
             font-weight: 500;
             transition: all 0.2s ease;
         }
-        
+
         .dropdown-item:hover {
             background-color: var(--gray-100);
         }
-        
+
         .notification-badge {
             font-size: 0.75rem;
             padding: 0.25rem 0.5rem;
         }
-        
+
         .table {
             border-radius: 0.75rem;
             overflow: hidden;
         }
-        
+
         .table thead th {
             background-color: var(--gray-50);
             font-weight: 600;
@@ -224,7 +222,7 @@
             font-size: 0.75rem;
             letter-spacing: 0.05em;
         }
-        
+
         /* Loading animation */
         .loading-spinner {
             width: 2.5rem;
@@ -234,28 +232,28 @@
             border-radius: 50%;
             animation: spinner 0.6s linear infinite;
         }
-        
+
         @keyframes spinner {
             to {transform: rotate(360deg);}
         }
-        
+
         /* Animation Utilities */
         .fade-in-up {
             animation: fadeInUp 0.5s ease-out;
         }
-        
+
         .fade-in {
             animation: fadeIn 0.5s ease-out;
         }
-        
+
         .scale-in {
             animation: scaleIn 0.3s ease-out;
         }
-        
+
         .slide-in-right {
             animation: slideInRight 0.5s ease-out;
         }
-        
+
         @keyframes fadeInUp {
             from {
                 opacity: 0;
@@ -266,12 +264,12 @@
                 transform: translateY(0);
             }
         }
-        
+
         @keyframes fadeIn {
             from { opacity: 0; }
             to { opacity: 1; }
         }
-        
+
         @keyframes scaleIn {
             from {
                 opacity: 0;
@@ -282,7 +280,7 @@
                 transform: scale(1);
             }
         }
-        
+
         @keyframes slideInRight {
             from {
                 opacity: 0;
@@ -293,33 +291,33 @@
                 transform: translateX(0);
             }
         }
-        
+
         /* Interactive Elements */
         .hover-lift {
             transition: transform 0.2s ease;
         }
-        
+
         .hover-lift:hover {
             transform: translateY(-2px);
         }
-        
+
         .hover-scale {
             transition: transform 0.2s ease;
         }
-        
+
         .hover-scale:hover {
             transform: scale(1.02);
         }
-        
+
         .input-group:focus-within {
             transform: translateY(-1px);
             box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
         }
-        
+
         .input-group {
             transition: all 0.2s ease;
         }
-        
+
         /* Animated Background */
         .animated-gradient {
             background: linear-gradient(
@@ -333,19 +331,19 @@
             background-size: 400% 400%;
             animation: gradientShift 15s ease infinite;
         }
-        
+
         @keyframes gradientShift {
             0% { background-position: 0% 50%; }
             50% { background-position: 100% 50%; }
             100% { background-position: 0% 50%; }
         }
-        
+
         /* Dynamic Button */
         .btn-dynamic {
             position: relative;
             overflow: hidden;
         }
-        
+
         .btn-dynamic::after {
             content: '';
             position: absolute;
@@ -358,22 +356,22 @@
             transform: translate(-50%, -50%);
             transition: width 0.6s ease, height 0.6s ease;
         }
-        
+
         .btn-dynamic:hover::after {
             width: 300%;
             height: 300%;
         }
-        
+
         /* Loading States */
         .btn-loading {
             position: relative;
             pointer-events: none;
         }
-        
+
         .btn-loading .btn-text {
             opacity: 0;
         }
-        
+
         .btn-loading::before {
             content: '';
             position: absolute;
@@ -387,11 +385,11 @@
             animation: spin 0.8s linear infinite;
             transform: translate(-50%, -50%);
         }
-        
+
         @keyframes spin {
             to { transform: translate(-50%, -50%) rotate(360deg); }
         }
-        
+
         /* Animation delay utilities */
         .delay-100 { animation-delay: 100ms !important; }
         .delay-200 { animation-delay: 200ms !important; }
@@ -408,26 +406,26 @@
             <nav class="col-md-2 sidebar">
                 <div class="pt-3">
                     <div class="logo-container">
-                        <img src="{% static 'img/logo.jpeg' %}" alt="Logo" class="logo-img">
+                        <img src="{% static 'img/logo.png' %}" alt="Logo" class="logo-img">
                     </div>
-                    
+
                     <ul class="nav flex-column">
                         <li class="nav-item">
-                            <a class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" 
+                            <a class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}"
                                href="{% url 'accounts:dashboard' %}">
                                 <i class="fas fa-tachometer-alt"></i>
                                 Dashboard
                             </a>
                         </li>
-                        
+
                         {% if user.is_superadmin %}
                         <li class="nav-item">
-                            
+
                         </li>
                         <li class="nav-item">
-                            
+
                         </li>
-                        
+
                         {% elif user.is_property_owner %}
                         <li class="nav-item">
                             <a class="nav-link" href="/properties">
@@ -467,12 +465,12 @@
                         </li>
 
 
-                        {% elif user.is_tenant %} 
-                        
+                        {% elif user.is_tenant %}
+
                         <li class="nav-item">
-                            <a class="nav-link" href="{% url 'properties:lease_detail' %}">
+                            <a class="nav-link" href="{% url 'properties:lease_list' %}">
                                 <i class="fas fa-file-contract"></i>
-                                My Lease
+                                Lease Agreements
                             </a>
                         </li>
                         <li class="nav-item">
@@ -481,7 +479,7 @@
                                 Maintenance Request
                             </a>
                         </li>
-                        
+
                         <li class="nav-item">
                             <a class="nav-link" href="{% url 'properties:invoice_list' %}">
                                 <i class="fas fa-file-invoice-dollar"></i>
@@ -500,7 +498,7 @@
                         {% else %}
 
                         <li class="nav-item">
-                            
+
                         </li>
 
                         {% endif %}
@@ -513,32 +511,32 @@
                 <!-- Top Navigation -->
                 <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm mb-4">
                     <div class="container-fluid">
-                        
-                        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" 
-                                data-bs-target="#navbarNav" aria-controls="navbarNav" 
+
+                        <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+                                data-bs-target="#navbarNav" aria-controls="navbarNav"
                                 aria-expanded="false" aria-label="Toggle navigation">
                             <span class="navbar-toggler-icon"></span>
                         </button>
-                        
+
                         <div class="collapse navbar-collapse" id="navbarNav">
                             <ul class="navbar-nav ms-auto">
                                 {% if user.is_authenticated %}
                                 <!-- Notifications Dropdown -->
                                 <li class="nav-item dropdown me-3">
-                                    <a class="nav-link position-relative" href="#" id="notificationDropdown" 
+                                    <a class="nav-link position-relative" href="#" id="notificationDropdown"
                                        role="button" data-bs-toggle="dropdown" aria-expanded="false">
                                         <i class="fas fa-bell"></i>
-                                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger notification-badge" 
+                                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger notification-badge"
                                               style="display: none;">
                                         </span>
                                     </a>
-                                    <div class="dropdown-menu dropdown-menu-end shadow" 
-                                         aria-labelledby="notificationDropdown" 
+                                    <div class="dropdown-menu dropdown-menu-end shadow"
+                                         aria-labelledby="notificationDropdown"
                                          style="width: 300px; max-height: 400px; overflow-y: auto;">
                                         <div class="p-2">
                                             <div class="d-flex justify-content-between align-items-center mb-2">
                                                 <h6 class="mb-0">Notifications</h6>
-                                                <a href="{% url 'notifications:notification_list' %}" class="text-decoration-none small">View All</a>
+                                                <!--a href="{% url 'notifications:notification_list' %}" class="text-decoration-none small">View All</a-->
                                             </div>
                                         </div>
                                         <div class="notification-list">
@@ -598,7 +596,7 @@
     <!-- DataTables -->
     <script src="https://cdn.datatables.net/1.11.3/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/1.11.3/js/dataTables.bootstrap5.min.js"></script>
-    
+
     {% block extra_js %}{% endblock %}
 
     {% block notification_js %}
@@ -667,7 +665,7 @@
         $(document).ready(function() {
             // Load notifications on page load
             loadNotifications();
-            
+
             // Refresh notifications every 30 seconds
             setInterval(loadNotifications, 30000);
 
@@ -705,7 +703,7 @@
 
     <!-- Footer -->
     <footer class="footer d-flex align-items-center">
-        <div class="container text-center text-muted">
+        <div class="container text-center text-primary">
             &copy; {% now "Y" %} RMS. All rights reserved.
         </div>
     </footer>

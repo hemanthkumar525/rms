@@ -25,7 +25,7 @@
 
                 <form method="post" enctype="multipart/form-data" novalidate>
                     {% csrf_token %}
-                    
+
                     <!-- Property and Unit Information -->
                     <div class="mb-4">
                         <h5 class="mb-3">Property Details</h5>
@@ -40,43 +40,6 @@
                             </div>
                         </div>
                     </div>
-
-                    <!-- Request Images Section -->
-                    <div class="mb-4">
-                        <h5 class="mb-3">Request Images</h5>
-                        <div class="image-upload-container">
-                            <div class="image-upload-area" id="dropZone">
-                                <input type="file" name="images" id="id_images" multiple accept="image/*" class="d-none">
-                                <div class="text-center py-5">
-                                    <i class="fas fa-cloud-upload-alt mb-3" style="font-size: 2.5rem; color: #0d6efd;"></i>
-                                    <h6 class="mb-2">Drag and drop images here</h6>
-                                    <p class="text-muted small mb-3">or</p>
-                                    <button type="button" class="btn btn-outline-primary btn-sm px-4" onclick="document.getElementById('id_images').click()">
-                                        Browse Files
-                                    </button>
-                                </div>
-                            </div>
-                            
-                            <!-- Image Preview Container -->
-                            <div class="image-preview mt-4" id="image-preview">
-                                <div class="row g-3" id="preview-row">
-                                    {% if images %}
-                                        {% for image in images %}
-                                            <div class="col-6 col-md-4 col-lg-3">
-                                                <div class="image-preview-item">
-                                                    <img src="{{ image.image.url }}" alt="Request Image" class="img-fluid rounded">
-                                                    <button type="button" class="btn-remove" data-image-id="{{ image.id }}">
-                                                        <i class="fas fa-times"></i>
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        {% endfor %}
-                                    {% endif %}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
                     <!-- Request Details -->
                     <div class="mb-4">
                         <h5 class="mb-3">Request Details</h5>
@@ -103,32 +66,32 @@
     .image-upload-container {
         width: 100%;
     }
-    
+
     .image-upload-area {
         border: 2px dashed #dee2e6;
         border-radius: 12px;
         background-color: #f8f9fa;
         transition: all 0.3s ease;
     }
-    
+
     .image-upload-area.dragover {
         border-color: #0d6efd;
         background-color: rgba(13, 110, 253, 0.05);
     }
-    
+
     .image-preview-item {
         position: relative;
         border-radius: 8px;
         overflow: hidden;
         box-shadow: 0 2px 8px rgba(0,0,0,0.1);
     }
-    
+
     .image-preview-item img {
         width: 100%;
         height: 160px;
         object-fit: cover;
     }
-    
+
     .btn-remove {
         position: absolute;
         top: 8px;
@@ -145,7 +108,7 @@
         color: #dc3545;
         transition: all 0.2s ease;
     }
-    
+
     .btn-remove:hover {
         background: #dc3545;
         color: white;
@@ -159,45 +122,45 @@ document.addEventListener('DOMContentLoaded', function() {
     const dropZone = document.getElementById('dropZone');
     const imageInput = document.getElementById('id_images');
     const previewRow = document.getElementById('preview-row');
-    
+
     // Drag and drop functionality
     ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
         dropZone.addEventListener(eventName, preventDefaults, false);
     });
-    
+
     function preventDefaults(e) {
         e.preventDefault();
         e.stopPropagation();
     }
-    
+
     ['dragenter', 'dragover'].forEach(eventName => {
         dropZone.addEventListener(eventName, highlight, false);
     });
-    
+
     ['dragleave', 'drop'].forEach(eventName => {
         dropZone.addEventListener(eventName, unhighlight, false);
     });
-    
+
     function highlight(e) {
         dropZone.classList.add('dragover');
     }
-    
+
     function unhighlight(e) {
         dropZone.classList.remove('dragover');
     }
-    
+
     dropZone.addEventListener('drop', handleDrop, false);
-    
+
     function handleDrop(e) {
         const dt = e.dataTransfer;
         const files = dt.files;
         handleFiles(files);
     }
-    
+
     imageInput.addEventListener('change', function() {
         handleFiles(this.files);
     });
-    
+
     function handleFiles(files) {
         [...files].forEach(file => {
             if (file.type.startsWith('image/')) {
@@ -214,7 +177,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         </div>
                     `;
                     previewRow.appendChild(col);
-                    
+
                     // Add remove functionality
                     col.querySelector('.btn-remove').addEventListener('click', function() {
                         col.remove();
@@ -224,7 +187,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
-    
+
     // Remove existing images
     document.querySelectorAll('.btn-remove[data-image-id]').forEach(btn => {
         btn.addEventListener('click', function() {

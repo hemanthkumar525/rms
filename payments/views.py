@@ -26,7 +26,7 @@ from rms.settings import *
 from io import BytesIO
 from datetime import datetime, timedelta
 from .forms import (
-    PaymentFilterForm, 
+    PaymentFilterForm,
     BulkUploadForm,
     PaymentConfirmationForm,
     InvoiceForm,
@@ -44,7 +44,7 @@ class PaymentListView(LoginRequiredMixin, ListView):
 
     def get_queryset(self):
         queryset = Invoice.objects.all()
-        
+
         # Filter based on user role
         if self.request.user.is_property_owner:
             queryset = queryset.filter(property__owner=self.request.user.propertyowner)
@@ -57,12 +57,12 @@ class PaymentListView(LoginRequiredMixin, ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         queryset = self.get_queryset()
-        
+
         # Add summary statistics
         total_amount = queryset.aggregate(Sum('total_amount'))['total_amount__sum'] or 0
         pending_amount = queryset.filter(status='pending').aggregate(Sum('total_amount'))['total_amount__sum'] or 0
         completed_amount = queryset.filter(status='paid').aggregate(Sum('total_amount'))['total_amount__sum'] or 0
-        
+
         context.update({
             'total_amount': total_amount,
             'pending_amount': pending_amount,
@@ -71,7 +71,7 @@ class PaymentListView(LoginRequiredMixin, ListView):
             'pending_count': queryset.filter(status='pending').count(),
             'completed_count': queryset.filter(status='paid').count(),
         })
-        
+
         return context
 
 class PaymentDetailView(LoginRequiredMixin, UserPassesTestMixin, DetailView):
@@ -82,7 +82,7 @@ class PaymentDetailView(LoginRequiredMixin, UserPassesTestMixin, DetailView):
     def test_func(self):
         payment = self.get_object()
         user = self.request.user
-        return (user.is_superadmin or 
+        return (user.is_superadmin or
                 (user.is_property_owner and payment.lease_agreement.property.owner == user.propertyowner) or
                 (user.is_tenant and payment.lease_agreement.tenant == user.tenant))
 
@@ -104,7 +104,7 @@ class PaymentCreateView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
         payment = form.save(commit=False)
         payment.created_by = self.request.user
         payment.save()
-        
+
         # Create payment history
         PaymentHistory.objects.create(
             payment=payment,
@@ -112,7 +112,7 @@ class PaymentCreateView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
             action='CREATED',
             description='Payment created'
         )
-        
+
         messages.success(self.request, 'Payment created successfully.')
         return super().form_valid(form)
 
@@ -125,7 +125,7 @@ class PaymentUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     def test_func(self):
         payment = self.get_object()
         user = self.request.user
-        return (user.is_superadmin or 
+        return (user.is_superadmin or
                 (user.is_property_owner and payment.lease_agreement.property.owner == user.propertyowner))
 
     def get_form_kwargs(self):
@@ -135,7 +135,7 @@ class PaymentUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
 
     def form_valid(self, form):
         payment = form.save()
-        
+
         # Create payment history
         PaymentHistory.objects.create(
             payment=payment,
@@ -143,7 +143,7 @@ class PaymentUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
             action='UPDATED',
             description='Payment details updated'
         )
-        
+
         messages.success(self.request, 'Payment updated successfully.')
         return super().form_valid(form)
 
@@ -169,7 +169,7 @@ def create_payment_intent(request, payment_id):
                 )
         payment.stripe_payment_intent_id = intent.id
         payment.save()
-        
+
 
         return JsonResponse({
             'clientSecret': intent.client_secret,
@@ -198,14 +198,14 @@ def stripe_webhook(request):
         intent = event['data']['object']
         payment_id = intent['metadata']['payment_id']
         payment = Payment.objects.get(id=payment_id)
-        
+
         # Update payment status
         payment.status = 'completed'
         payment.payment_date = timezone.now()
         payment.transaction_id = intent['id']
         payment.payment_method = 'stripe'
         payment.save()
-        
+
         # Create payment history
         payment = Payment.objects.create(
             lease_agreement=payment.lease_agreement,
@@ -218,7 +218,7 @@ def stripe_webhook(request):
             transaction_id=intent['id'],
             paid_by=payment.paid_by
         )
-        
+
         # Create payment history
         PaymentHistory.objects.create(
             payment=payment,
@@ -226,16 +226,16 @@ def stripe_webhook(request):
             action='COMPLETED',
             description='Payment completed via Stripe'
         )
-    
+
     elif event['type'] == 'payment_intent.payment_failed':
         intent = event['data']['object']
         payment_id = intent['metadata']['payment_id']
         payment = Payment.objects.get(id=payment_id)
-        
+
         # Update payment status
         payment.status = 'failed'
         payment.save()
-        
+
         # Create payment history
         PaymentHistory.objects.create(
             payment=payment,
@@ -249,12 +249,12 @@ def stripe_webhook(request):
 @login_required
 def make_payment(request, lease_id):
     lease = get_object_or_404(LeaseAgreement, id=lease_id)
-    
+
     # Verify that the logged-in user is the tenant
     if not request.user.is_tenant or request.user.tenant != lease.tenant:
         messages.error(request, 'You are not authorized to make payments for this lease.')
         return redirect('payments:payment_list')
-    
+
     # Create a new payment for this lease if it doesn't exist
     payment = Payment.objects.create(
         lease_agreement_id=lease.id,
@@ -263,7 +263,7 @@ def make_payment(request, lease_id):
         status='PENDING',
         payment_method='STRIPE',
     )
-    
+
     return render(request, 'payments/make_payment.html', {
         'payment': payment,
         'stripe_public_key': STRIPE_PUBLIC_KEY,
@@ -273,13 +273,13 @@ def make_payment(request, lease_id):
 @login_required
 def confirm_payment(request, pk):
     payment = get_object_or_404(Payment, pk=pk)
-    
+
     # Verify that the logged-in user is the property owner
-    if not (request.user.is_superadmin or 
+    if not (request.user.is_superadmin or
             (request.user.is_property_owner and payment.lease_agreement.property.owner == request.user.propertyowner)):
         messages.error(request, 'You are not authorized to confirm this payment.')
         return redirect('payments:payment_list')
-    
+
     if request.method == 'POST':
         form = PaymentConfirmationForm(request.POST)
         if form.is_valid():
@@ -287,7 +287,7 @@ def confirm_payment(request, pk):
             payment.confirmed_at = timezone.now()
             payment.confirmed_by = request.user
             payment.save()
-            
+
             # Create payment history
             PaymentHistory.objects.create(
                 payment=payment,
@@ -295,23 +295,23 @@ def confirm_payment(request, pk):
                 action='CONFIRMED',
                 description='Payment confirmed by property owner'
             )
-            
+
             messages.success(request, 'Payment confirmed successfully.')
             return redirect('payments:payment_detail', pk=payment.pk)
-    
+
     return redirect('payments:payment_detail', pk=payment.pk)
 
 @login_required
 def payment_receipt(request, pk):
     payment = get_object_or_404(Payment, pk=pk)
-    
+
     # Verify user authorization
-    if not (request.user.is_superadmin or 
-            request.user.is_property_owner or 
+    if not (request.user.is_superadmin or
+            request.user.is_property_owner or
             request.user.tenant == payment.lease_agreement.tenant):
         messages.error(request, 'You are not authorized to view this receipt.')
         return redirect('payments:payment_list')
-    
+
     return render(request, 'payments/payment_receipt.html', {
         'payment': payment
     })
@@ -321,22 +321,22 @@ def bulk_upload_payments(request):
     if not (request.user.is_superadmin or request.user.is_property_owner):
         messages.error(request, 'You are not authorized to perform bulk uploads.')
         return redirect('payments:payment_list')
-    
+
     if request.method == 'POST':
         form = BulkUploadForm(request.POST, request.FILES)
         if form.is_valid():
             file = request.FILES['file']
             property_id = form.cleaned_data['property']
-            
+
             try:
                 # Process CSV file
                 decoded_file = file.read().decode('utf-8').splitlines()
                 reader = csv.DictReader(decoded_file)
-                
+
                 success_count = 0
                 error_count = 0
                 errors = []
-                
+
                 for row in reader:
                     try:
                         # Create payment record
@@ -355,7 +355,7 @@ def bulk_upload_payments(request):
                     except Exception as e:
                         error_count += 1
                         errors.append(f"Row {reader.line_num}: {str(e)}")
-                
+
                 messages.success(
                     request,
                     f'Bulk upload completed. {success_count} payments created successfully. '
@@ -363,14 +363,14 @@ def bulk_upload_payments(request):
                 )
                 if errors:
                     messages.warning(request, 'Errors: ' + '; '.join(errors))
-                
+
                 return redirect('payments:payment_list')
-            
+
             except Exception as e:
                 messages.error(request, f'Error processing file: {str(e)}')
     else:
         form = BulkUploadForm()
-    
+
     return render(request, 'payments/bulk_upload.html', {
         'form': form
     })
@@ -380,12 +380,12 @@ def export_payments(request, format='csv'):
     if not (request.user.is_superadmin or request.user.is_property_owner):
         messages.error(request, 'You are not authorized to export payments.')
         return redirect('payments:payment_list')
-    
+
     # Get filtered queryset
     queryset = Payment.objects.all()
     if request.user.is_property_owner:
         queryset = queryset.filter(lease_agreement__property__owner=request.user.propertyowner)
-    
+
     # Apply filters from URL parameters
     form = PaymentFilterForm(request.GET)
     if form.is_valid():
@@ -397,18 +397,18 @@ def export_payments(request, format='csv'):
             queryset = queryset.filter(payment_date__gte=form.cleaned_data['start_date'])
         if form.cleaned_data.get('end_date'):
             queryset = queryset.filter(payment_date__lte=form.cleaned_data['end_date'])
-    
+
     # Prepare the response
     if format == 'csv':
         response = HttpResponse(content_type='text/csv')
         response['Content-Disposition'] = 'attachment; filename="payments.csv"'
-        
+
         writer = csv.writer(response)
         writer.writerow([
             'ID', 'Property', 'Tenant', 'Amount', 'Status', 'Payment Method',
             'Payment Date', 'Reference Number', 'Created At'
         ])
-        
+
         for payment in queryset:
             writer.writerow([
                 payment.id,
@@ -421,12 +421,12 @@ def export_payments(request, format='csv'):
                 payment.reference_number,
                 payment.created_at
             ])
-    
+
     else:  # Excel format
         output = BytesIO()
         workbook = xlsxwriter.Workbook(output)
         worksheet = workbook.add_worksheet()
-        
+
         # Add headers
         headers = [
             'ID', 'Property', 'Tenant', 'Amount', 'Status', 'Payment Method',
@@ -434,7 +434,7 @@ def export_payments(request, format='csv'):
         ]
         for col, header in enumerate(headers):
             worksheet.write(0, col, header)
-        
+
         # Add data
         for row, payment in enumerate(queryset, start=1):
             worksheet.write(row, 0, payment.id)
@@ -446,34 +446,34 @@ def export_payments(request, format='csv'):
             worksheet.write(row, 6, payment.payment_date.strftime('%Y-%m-%d'))
             worksheet.write(row, 7, payment.reference_number or '')
             worksheet.write(row, 8, payment.created_at.strftime('%Y-%m-%d %H:%M:%S'))
-        
+
         workbook.close()
         output.seek(0)
-        
+
         response = HttpResponse(
             output.read(),
             content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
         )
         response['Content-Disposition'] = 'attachment; filename="payments.xlsx"'
-    
+
     return response
 
 @login_required
 def payment_complete(request):
     payment_intent_id = request.GET.get('payment_intent')
     payment_intent_client_secret = request.GET.get('payment_intent_client_secret')
-    
+
     if not payment_intent_id:
         messages.error(request, 'No payment information found.')
         return redirect('payments:payment_list')
-    
+
     try:
         # Retrieve the payment intent from Stripe
         payment_intent = stripe.PaymentIntent.retrieve(payment_intent_id)
-        
+
         # Find the corresponding payment in our database
         payment = Payment.objects.get(stripe_payment_intent_id=payment_intent_id)
-        
+
         if payment_intent.status == 'succeeded':
             # Update payment status
             payment.status = 'completed'
@@ -481,7 +481,7 @@ def payment_complete(request):
             payment.transaction_id = payment_intent_id
             payment.payment_method = 'stripe'
             payment.save()
-            
+
             # Create payment history
             PaymentHistory.objects.create(
                 payment=payment,
@@ -489,13 +489,13 @@ def payment_complete(request):
                 action='COMPLETED',
                 description='Payment completed via Stripe'
             )
-            
+
             messages.success(request, 'Payment completed successfully!')
         else:
             messages.error(request, 'Payment was not successful. Please try again.')
-            
+
         return redirect('payments:payment_detail', pk=payment.id)
-        
+
     except stripe.error.StripeError as e:
         messages.error(request, f'Payment error: {str(e)}')
         return redirect('payments:payment_list')
@@ -507,12 +507,12 @@ def payment_complete(request):
 def payment_detail(request, pk):
     # Retrieve the payment object by primary key (id)
     payment = get_object_or_404(Payment, pk=pk)
-    
+
     user = request.user
-    
+
     # Authorization check: user must be a superadmin, property owner, or the tenant who made the payment
     if not (
-        user.is_superadmin or 
+        user.is_superadmin or
         (user.is_property_owner and payment.lease_agreement.property.owner == user.propertyowner) or
         (user.is_tenant and payment.lease_agreement.tenant == user.tenant)
     ):
@@ -536,7 +536,7 @@ def invoice_list(request):
         invoices = Invoice.objects.filter(property__owner=request.user.propertyowner)
     else:
         invoices = Invoice.objects.none()
-    
+
     return render(request, 'payments/invoice_list.html', {
         'invoices': invoices
     })
@@ -545,12 +545,12 @@ def invoice_list(request):
 def invoice_detail(request, pk):
     """View for showing invoice details"""
     invoice = get_object_or_404(Invoice, pk=pk)
-    
+
     # Check permissions
     if not (hasattr(request.user, 'tenant') and request.user.tenant == invoice.tenant) and \
        not (hasattr(request.user, 'propertyowner') and request.user.propertyowner == invoice.property.owner):
         return HttpResponseForbidden("You don't have permission to view this invoice")
-    
+
     return render(request, 'payments/invoice_detail.html', {
         'invoice': invoice,
         'STRIPE_PUBLIC_KEY': settings.STRIPE_PUBLIC_KEY
@@ -564,7 +564,7 @@ class InvoiceListView(LoginRequiredMixin, ListView):
 
     def get_queryset(self):
         queryset = Invoice.objects.all()
-        
+
         # Filter based on user role
         if self.request.user.is_property_owner:
             queryset = queryset.filter(property__owner=self.request.user.propertyowner)
@@ -634,7 +634,7 @@ class InvoiceCreateView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
         invoice = form.save(commit=False)
         invoice.property = form.cleaned_data['lease_agreement'].property
         invoice.save()
-        
+
         # Send email notification
         from utils.email_utils import send_invoice_creation_email
         try:
@@ -673,10 +673,10 @@ def get_lease_details(request):
     """AJAX view to get lease agreement details"""
     lease_id = request.GET.get('lease_id')
     lease = get_object_or_404(LeaseAgreement, id=lease_id)
-    
+
     if request.user.is_property_owner and lease.property.owner != request.user.propertyowner:
         return JsonResponse({'error': 'Permission denied'}, status=403)
-        
+
     data = {
         'property_unit_id': lease.property_unit.id if lease.property_unit else None,
         'tenant_id': lease.tenant.id if lease.tenant else None,
@@ -687,7 +687,7 @@ def get_lease_details(request):
 @login_required
 def tenant_make_payment(request, pk):
     invoice = get_object_or_404(Invoice, id=pk)
-    
+
     # Validate permissions
     if not request.user.is_tenant or invoice.tenant.user != request.user:
         messages.error(request, "Unauthorized payment attempt")
@@ -749,10 +749,10 @@ def tenant_make_payment(request, pk):
 def payment_success(request, pk):
     """Handle successful payment"""
     invoice = get_object_or_404(Invoice, pk=pk)
-    
+
     if not hasattr(request.user, 'tenant') or request.user.tenant != invoice.tenant:
         return HttpResponseForbidden("You don't have permission to view this page")
-    
+
     try:
         # Verify payment with Stripe
         if invoice.stripe_checkout_id:
@@ -764,7 +764,7 @@ def payment_success(request, pk):
                 messages.warning(request, "Payment is still processing. Please check back later.")
         else:
             messages.error(request, "No payment information found for this invoice.")
-    
+
     except Exception as e:
         messages.error(request, f"Error verifying payment: {str(e)}")
 
@@ -775,7 +775,7 @@ def payment_success(request, pk):
         message=f'Your payment of ${invoice.total_amount} for {invoice.property.name} has been processed successfully.',
         related_object=invoice
     )
-    
+
     # Create notification for property owner
     create_notification(
         recipient=invoice.property.owner.user,
@@ -784,7 +784,7 @@ def payment_success(request, pk):
         message=f'Payment of ${invoice.total_amount} received from {invoice.tenant.user.get_full_name()} for {invoice.property.name}.',
         related_object=invoice
     )
-    
+
     return redirect('payments:invoice_detail', pk=invoice.pk)
 
 @require_POST
@@ -793,23 +793,23 @@ def stripe_webhook(request):
     """Handle Stripe webhook events"""
     payload = request.body
     sig_header = request.META.get('HTTP_STRIPE_SIGNATURE')
-    
+
     try:
         event = stripe.Webhook.construct_event(
             payload, sig_header, settings.STRIPE_WEBHOOK_SECRET
         )
-        
+
         if event.type == 'checkout.session.completed':
             session = event.data.object
             invoice_id = session.metadata.get('invoice_id')
-            
+
             if invoice_id:
                 with transaction.atomic():
                     # Update invoice
                     invoice = Invoice.objects.get(id=invoice_id)
                     invoice.stripe_payment_intent_id = session.payment_intent
                     invoice.mark_as_paid()
-                    
+
                     # Create payment record
                     payment = Payment.objects.create(
                         lease_agreement=invoice.lease_agreement,
@@ -824,9 +824,9 @@ def stripe_webhook(request):
                         stripe_payment_method_id=session.payment_method,
                         paid_by=invoice.tenant.user
                     )
-        
+
         return JsonResponse({'status': 'success'})
-    
+
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=400)
 
@@ -834,7 +834,7 @@ def stripe_webhook(request):
 def confirm_cash_payment(request, lease_agreement_id):
     """Handle cash payment confirmation"""
     lease_agreement = get_object_or_404(LeaseAgreement, id=lease_agreement_id)
-    
+
     if request.method == 'POST':
         form = PaymentConfirmationForm(request.POST)
         if form.is_valid():
@@ -851,7 +851,7 @@ def confirm_cash_payment(request, lease_agreement_id):
                     transaction_id=f'CASH-{timezone.now().strftime("%Y%m%d%H%M%S")}',
                     paid_by=request.user
                 )
-                
+
                 # Create payment history
                 PaymentHistory.objects.create(
                     payment=payment,
@@ -859,12 +859,12 @@ def confirm_cash_payment(request, lease_agreement_id):
                     action='COMPLETED',
                     description=f'Cash payment of {payment.amount} received'
                 )
-                
+
                 messages.success(request, 'Cash payment has been recorded successfully.')
                 return redirect('payments:payment_detail', pk=payment.pk)
     else:
         form = PaymentConfirmationForm()
-    
+
     return render(request, 'payments/confirm_cash_payment.html', {
         'form': form,
         'lease_agreement': lease_agreement
@@ -874,7 +874,7 @@ def confirm_cash_payment(request, lease_agreement_id):
 def confirm_bank_transfer(request, lease_agreement_id):
     """Handle bank transfer confirmation"""
     lease_agreement = get_object_or_404(LeaseAgreement, id=lease_agreement_id)
-    
+
     if request.method == 'POST':
         form = PaymentConfirmationForm(request.POST)
         if form.is_valid():
@@ -892,7 +892,7 @@ def confirm_bank_transfer(request, lease_agreement_id):
                     transaction_id=reference_number,
                     paid_by=request.user
                 )
-                
+
                 # Create payment history
                 PaymentHistory.objects.create(
                     payment=payment,
@@ -900,12 +900,12 @@ def confirm_bank_transfer(request, lease_agreement_id):
                     action='COMPLETED',
                     description=f'Bank transfer payment of {payment.amount} received. Ref: {reference_number}'
                 )
-                
+
                 messages.success(request, 'Bank transfer has been recorded successfully.')
                 return redirect('payments:payment_detail', pk=payment.pk)
     else:
         form = PaymentConfirmationForm()
-    
+
     return render(request, 'payments/confirm_bank_transfer.html', {
         'form': form,
         'lease_agreement': lease_agreement
@@ -915,7 +915,7 @@ def confirm_bank_transfer(request, lease_agreement_id):
 def create_security_deposit_payment(request, lease_agreement_id):
     """Create security deposit payment record"""
     lease_agreement = get_object_or_404(LeaseAgreement, id=lease_agreement_id)
-    
+
     if request.method == 'POST':
         form = PaymentForm(request.POST, user=request.user)
         if form.is_valid():
@@ -931,7 +931,7 @@ def create_security_deposit_payment(request, lease_agreement_id):
                     payment_method='pending',
                     paid_by=lease_agreement.tenant.user
                 )
-                
+
                 # Create payment history
                 PaymentHistory.objects.create(
                     payment=payment,
@@ -939,7 +939,7 @@ def create_security_deposit_payment(request, lease_agreement_id):
                     action='CREATED',
                     description=f'Security deposit payment of {payment.amount} created'
                 )
-                
+
                 messages.success(request, 'Security deposit payment has been created successfully.')
                 return redirect('payments:payment_detail', pk=payment.pk)
     else:
@@ -950,7 +950,7 @@ def create_security_deposit_payment(request, lease_agreement_id):
             'due_date': timezone.now().date()
         }
         form = PaymentForm(user=request.user, initial=initial_data)
-    
+
     return render(request, 'payments/security_deposit_form.html', {
         'form': form,
         'lease_agreement': lease_agreement

@@ -14,7 +14,7 @@ from .forms import (
     TenantUpdateForm, UserLoginForm, SubscriptionForm
 )
 from payments.models import Payment
-from .models import PropertyOwner, Tenant, Subscription, PropertyOwnerSubscription
+from .models import CustomUser, PropertyOwner, Tenant, Subscription, PropertyOwnerSubscription
 from properties.models import (
     LeaseAgreement, Property, TenantProperty, PropertyMaintenance,
     PropertyManager
@@ -27,6 +27,19 @@ import stripe
 from django.db import transaction
 import json
 from django.core.serializers.json import DjangoJSONEncoder
+
+from django.contrib.auth.views import PasswordResetView
+from .forms import UsernamePasswordResetForm
+
+from django.urls import reverse_lazy
+
+class UsernamePasswordResetView(PasswordResetView):
+    form_class = UsernamePasswordResetForm
+    template_name = 'registration/password_reset_form.html'
+    email_template_name = 'registration/password_reset_email.html'
+    success_url = reverse_lazy('accounts:password_reset_done')
+
+
 
 @login_required
 def superadmin_dashboard(request):
@@ -63,108 +76,147 @@ def subscription_create(request):
     return render(request, 'accounts/subscription_form.html', {'form': form})
 
 
+from django.shortcuts import render
+from django.db.models import Exists, OuterRef
+
 @login_required
-def subscription_delete(request, pk):
+def subscription_delete(request, subscription_id):
     if not request.user.is_superuser:
         messages.error(request, 'Access denied. Superadmin privileges required.')
         return redirect('accounts:dashboard')
 
-    subscription = get_object_or_404(Subscription, pk=pk)
+    subscription = get_object_or_404(Subscription, id=subscription_id)
+
+    # Check if the subscription is being used by any property owner
+    is_in_use = PropertyOwnerSubscription.objects.filter(subscription=subscription).exists()
+
     if request.method == 'POST':
+        if is_in_use:
+            messages.error(request, 'Cannot delete this subscription because it is currently active for one or more property owners.')
+            return redirect('accounts:dashboard')
+
         subscription.delete()
         messages.success(request, 'Subscription package deleted successfully.')
-    return redirect('accounts:superadmin_dashboard')
+        return redirect('accounts:dashboard')
+
+    context = {
+        'subscription': subscription,
+        'is_in_use': is_in_use
+    }
+    return render(request, 'accounts/confirm_delete_subscription.html', context)
+
+
 
 @login_required
 def dashboard(request):
-    context = {}
-    
+    user = request.user
+    context = {
+        'user': user,
+    }
+
+    if user.is_superuser:
+        # Superadmin: Show property owners list and system stats
+        context['property_owners'] = PropertyOwner.objects.all()
+        context['subscription_packages'] = Subscription.objects.all()
+        return render(request, 'accounts/superadmin_dashboard.html', context)
+
     # Check user type and display appropriate dashboard
     if request.user.is_property_owner():
         try:
+            # Get the property owner
             property_owner = PropertyOwner.objects.get(user=request.user)
-            context['property_owner'] = property_owner
-            context['properties'] = Property.objects.filter(owner=property_owner)
+            context = {
+                'property_owner': property_owner,
+                'properties': Property.objects.filter(owner=property_owner),
+            }
+
+            # Add total properties and tenants
             context['total_properties'] = context['properties'].count()
             context['total_tenants'] = Tenant.objects.filter(
                 leaseagreement__property_unit__property__owner=property_owner,
                 leaseagreement__status='active'
             ).distinct().count()
-            
-            # Get recent lease agreements
+
+            # Add recent lease agreements
             context['lease_agreements'] = LeaseAgreement.objects.filter(
                 property_unit__property__owner=property_owner
             ).order_by('-created_at')[:5]
-            
-            # Get recent maintenance requests
+
+            # Add recent maintenance requests
             context['maintenance_requests'] = PropertyMaintenance.objects.filter(
                 property__owner=property_owner
             ).order_by('-reported_date')[:5]
-            
+
+                        # Get recent invoices
+            context['invoice_total'] = Invoice.objects.filter(
+            property__owner=property_owner
+            ).aggregate(total=Sum('total_amount'))['total'] or 0
+
+
             return render(request, 'accounts/property_owner_dashboard.html', context)
-            
+
         except PropertyOwner.DoesNotExist:
             messages.warning(request, 'Please complete your property owner profile.')
             return redirect('accounts:complete_profile')
-            
+
     elif request.user.is_tenant():
         try:
             tenant = Tenant.objects.get(user=request.user)
             context['tenant'] = tenant
             context['lease_agreements'] = LeaseAgreement.objects.filter(tenant=tenant)
-            
+
             # Get invoices instead of payments
             context['invoices'] = Invoice.objects.filter(
                 lease_agreement__tenant=tenant
             ).order_by('-created_at')[:5]
-            
+
             context['pending_payments'] = Invoice.objects.filter(
                 lease_agreement__tenant=tenant,
                 status='pending'
             ).count()
-            
+
             context['payments'] = Invoice.objects.filter(
                 lease_agreement__tenant=tenant,
                 status='paid'
             )
-            
+
             return render(request, 'accounts/tenant_dashboard.html', context)
-            
+
         except Tenant.DoesNotExist:
             messages.warning(request, 'Please complete your tenant profile.')
             return redirect('accounts:complete_profile')
-            
+
     elif request.user.is_property_manager():
         try:
             property_manager = PropertyManager.objects.get(user=request.user)
             context['property_manager'] = property_manager
-            
+
             # Get assigned properties
             context['properties'] = property_manager.assigned_properties.all()
             context['total_properties'] = context['properties'].count()
-            
+
             # Get maintenance requests for assigned properties
             context['maintenance_requests'] = PropertyMaintenance.objects.filter(
                 property__in=context['properties']
             ).order_by('-reported_date')[:10]
-            
+
             # Count maintenance requests by status
             context['pending_maintenance'] = PropertyMaintenance.objects.filter(
                 property__in=context['properties'],
                 status='pending'
             ).count()
-            
+
             context['in_progress_maintenance'] = PropertyMaintenance.objects.filter(
                 property__in=context['properties'],
                 status='in_progress'
             ).count()
-            
+
             return render(request, 'accounts/property_manager_dashboard.html', context)
-            
+
         except PropertyManager.DoesNotExist:
             messages.warning(request, 'Please complete your property manager profile.')
             return redirect('accounts:complete_profile')
-    
+
     # If user type is not set
     return redirect('accounts:select_user_type')
 
@@ -195,7 +247,7 @@ def register_property_owner(request):
     else:
         user_form = CustomUserCreationForm(initial={'user_type': 'property_owner'})
         owner_form = PropertyOwnerRegistrationForm()
-    
+
     return render(request, 'accounts/register_property_owner.html', {
         'user_form': user_form,
         'owner_form': owner_form
@@ -204,20 +256,20 @@ def register_property_owner(request):
 def register_tenant(request, property_id):
     # Get the property and verify ownership
     property = get_object_or_404(Property, id=property_id)
-    
+
     # Only allow property owners who own this property
     if not request.user.is_authenticated or not request.user.is_property_owner():
         messages.error(request, 'Only property owners can register tenants.')
         return redirect('accounts:login')
-        
+
     if property.owner.user != request.user:
         messages.error(request, 'You can only register tenants for your own properties.')
         return redirect('properties:property_list')
-    
+
     if request.method == 'POST':
         user_form = CustomUserCreationForm(request.POST, request.FILES)
         tenant_form = TenantRegistrationForm(request.POST, request.FILES)
-        
+
         if user_form.is_valid() and tenant_form.is_valid():
             try:
                 with transaction.atomic():
@@ -225,12 +277,12 @@ def register_tenant(request, property_id):
                     user = user_form.save(commit=False)
                     user.user_type = 'tenant'
                     user.save()
-                    
+
                     # Create tenant profile
                     tenant = tenant_form.save(commit=False)
                     tenant.user = user
                     tenant.save()
-                    
+
                     # Create tenant-property relationship
                     TenantProperty.objects.create(
                         tenant=tenant,
@@ -238,7 +290,7 @@ def register_tenant(request, property_id):
                         status='active',  # Automatically active since property owner is creating it
                         start_date=timezone.now()
                     )
-                    
+
                     # Send welcome email
                     from utils.email_utils import send_tenant_creation_email
                     try:
@@ -248,10 +300,10 @@ def register_tenant(request, property_id):
 
                     messages.success(request, 'Tenant registered successfully!')
                     return redirect('properties:property_detail', pk=property_id)
-                    
+
             except Exception as e:
                 messages.error(request, f'Error creating tenant account: {str(e)}')
-                
+
         else:
             for field, errors in user_form.errors.items():
                 for error in errors:
@@ -265,7 +317,7 @@ def register_tenant(request, property_id):
             'user_type': 'tenant',
         })
         tenant_form = TenantRegistrationForm()
-    
+
     context = {
         'user_form': user_form,
         'tenant_form': tenant_form,
@@ -273,33 +325,51 @@ def register_tenant(request, property_id):
         'is_owner_registration': True,
         'page_title': f'Register New Tenant for {property.title}'
     }
-    
+
     return render(request, 'accounts/register_tenant.html', context)
+
 
 def user_login(request):
     if request.user.is_authenticated:
         return redirect('accounts:dashboard')
 
+    form = UserLoginForm()
     if request.method == 'POST':
         username = request.POST.get('username')
         password = request.POST.get('password')
+
+        # First try to authenticate with username
         user = authenticate(username=username, password=password)
-        
-        if user is not None:
-            login(request, user)
-            messages.success(request, 'Login successful!')
-            
-            # Check if user is a property owner and redirect to subscription
-            if hasattr(user, 'property_owner'):
-                return redirect('accounts:payment')
-            
-            return redirect('accounts:dashboard')
-        else:
-            messages.error(request, 'Invalid username or password.')
-    else:
-        form = UserLoginForm()
-    
+
+        # If that fails, try to authenticate with email
+        if not user:
+            try:
+                # Use filter instead of get to handle multiple users
+                users = CustomUser.objects.filter(email=username)
+                if users.exists():
+                    # Try to authenticate with each user's credentials
+                    for user_obj in users:
+                        user = authenticate(username=user_obj.username, password=password)
+                        if user:
+                            break  # Found a valid user
+            except Exception as e:
+                user = None
+
+        if not user:
+            messages.error(request, 'Invalid email/username or password.')
+            return render(request, 'accounts/login.html', {'form': form})
+
+        login(request, user)
+        messages.success(request, 'Login successful!')
+
+        # Check if user is a property owner and redirect to subscription
+        if hasattr(user, 'property_owner'):
+            return redirect('accounts:payment')
+
+        return redirect('accounts:dashboard')
+
     return render(request, 'accounts/login.html', {'form': form})
+
 
 @login_required
 def user_logout(request):
@@ -341,28 +411,56 @@ def profile(request):
             form = TenantUpdateForm(instance=tenant)
         return render(request, 'accounts/profile.html', {'form': form})
 
+
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render, redirect
+from django.contrib import messages
+from django.http import JsonResponse
+from django.db.models import Prefetch
+from properties.models import Tenant, LeaseAgreement  # adjust if your import paths differ
+from payments.models import Invoice  # Adjust path as needed
+from django.db.models import Prefetch
+
 @login_required
 def tenant_list(request):
     if request.user.is_superuser:
         tenants = Tenant.objects.select_related('user').prefetch_related(
-            'leaseagreement_set__property_unit',
-            'leaseagreement_set__property'
+            Prefetch('leaseagreement_set', queryset=LeaseAgreement.objects.select_related('property', 'property_unit'))
         ).all()
     elif request.user.is_property_owner():
         tenants = Tenant.objects.select_related('user').prefetch_related(
-            'leaseagreement_set__property_unit',
-            'leaseagreement_set__property'
+            Prefetch('leaseagreement_set', queryset=LeaseAgreement.objects.select_related('property', 'property_unit'))
         ).filter(leaseagreement__property__owner=request.user.propertyowner).distinct()
     else:
         messages.error(request, 'Access denied. You do not have permission to view tenants.')
         return redirect('accounts:dashboard')
-    
-    return render(request, 'accounts/tenant_list.html', {'tenants': tenants})
 
-def stripe_config(request):
-    if request.method == 'GET':
-        stripe_config = {'publicKey': STRIPE_PUBLISHABLE_KEY}
-        return JsonResponse(stripe_config, safe=False)
+    # Prepare lease details per tenant
+    tenant_data = []
+    for tenant in tenants:
+        leases = tenant.leaseagreement_set.all()
+        lease_info = []
+        for lease in leases:
+            # Get latest invoice for this lease
+            latest_invoice = Invoice.objects.filter(lease_agreement=lease).order_by('-issue_date').first()
+            payment_status = latest_invoice.status if latest_invoice else 'No Invoice'
+
+            lease_info.append({
+                'property': lease.property.title,
+                'unit': lease.property_unit.unit_number if lease.property_unit else 'N/A',
+                'lease_status': 'Active' if lease.status == 'active' else 'Inactive',
+                'payment_status': payment_status
+            })
+
+        tenant_data.append({
+            'tenant': tenant,
+            'leases': lease_info
+        })
+
+    return render(request, 'accounts/tenant_list.html', {
+        'tenant_data': tenant_data
+    })
+
 
 @login_required
 def subscription_view(request):
@@ -392,13 +490,13 @@ def subscription_view(request):
                 cancel_url=request.build_absolute_uri(reverse('accounts:payment_cancelled')),
                 client_reference_id=request.user.propertyowner.id
             )
-            
+
             # Store subscription details in session
             request.session['subscription_id'] = subscription.id
             request.session['subscription_duration'] = subscription.duration_months * 30  # Convert months to days
-            
+
             return JsonResponse({'sessionId': checkout_session.id})
-            
+
         # Get all active subscriptions
         subscriptions = Subscription.objects.filter(is_active=True)
         for subscription in subscriptions:
@@ -410,7 +508,7 @@ def subscription_view(request):
                 'max_properties': subscription.max_properties,
                 'max_units': subscription.max_units,
                 'description': subscription.description,
-                'price_id': subscription.stripe_price_id,  
+                'price_id': subscription.stripe_price_id,
             }
 
         # If there's a selected subscription, move it to the top
@@ -447,16 +545,16 @@ def payment_successful(request):
     try:
         stripe.api_key = settings.STRIPE_SECRET_KEY
         session = stripe.checkout.Session.retrieve(session_id)
-        
+
         # Get subscription from session metadata
         subscription_id = request.session.get('subscription_id')
         if not subscription_id:
             messages.error(request, 'No subscription found')
             return redirect('accounts:dashboard')
-            
+
         subscription = Subscription.objects.get(id=subscription_id)
         property_owner = PropertyOwner.objects.get(user=request.user)
-        
+
         if session.payment_status == 'paid':
             # Cancel current active subscription if exists
             current_subscription = PropertyOwnerSubscription.objects.filter(
@@ -464,7 +562,7 @@ def payment_successful(request):
                 status='active',
                 end_date__gt=timezone.now()
             ).first()
-            
+
             if current_subscription:
                 # Cancel the subscription in Stripe if it exists
                 if current_subscription.stripe_subscription_id:
@@ -473,16 +571,16 @@ def payment_successful(request):
                     except stripe.error.StripeError:
                         # If there's an error deleting from Stripe, continue anyway
                         pass
-                
+
                 # Mark current subscription as cancelled
                 current_subscription.status = 'cancelled'
                 current_subscription.cancelled_at = timezone.now()
                 current_subscription.save()
-            
+
             # Calculate end date based on subscription duration
             duration_days = subscription.duration_months * 30
             end_date = timezone.now() + timezone.timedelta(days=duration_days)
-            
+
             # Create new property owner subscription
             owner_subscription = PropertyOwnerSubscription.objects.create(
                 property_owner=property_owner,
@@ -507,23 +605,23 @@ def payment_successful(request):
                 payment_method='stripe',
                 transaction_id=session.payment_intent,
                 stripe_payment_intent_id=session.payment_intent,
-                stripe_payment_method_id=session.payment_intent,  
+                stripe_payment_method_id=session.payment_intent,
                 paid_by=request.user
             )
-            
+
             messages.success(request, f'Payment successful! Your subscription has been upgraded to {subscription.name}.')
-            
+
             # Clear session data
             if 'subscription_id' in request.session:
                 del request.session['subscription_id']
             if 'subscription_duration' in request.session:
                 del request.session['subscription_duration']
-                
+
             return redirect('accounts:subscription_list')
         else:
             messages.error(request, 'Payment was not completed successfully')
             return redirect('accounts:subscription_list')
-            
+
     except stripe.error.StripeError as e:
         messages.error(request, f'Stripe error: {str(e)}')
         return redirect('accounts:subscription_list')
@@ -540,7 +638,7 @@ def stripe_webhook(request):
         event = stripe.Webhook.construct_event(payload,sig_header,endpoint_secret)
     except:
         return HttpResponse(status=400)
-    
+
     if event['type'] == 'checkout_session.completed':
         print(event)
         print('payment ws succesful')
@@ -588,45 +686,45 @@ def property_analytics(request):
     if not request.user.is_property_owner():
         messages.error(request, 'Access denied. Property owner privileges required.')
         return redirect('accounts:dashboard')
-    
+
     owner = PropertyOwner.objects.get(user=request.user)
-    
+
     # Get date range from request or default to last 30 days
     end_date = timezone.now()
     start_date = end_date - timedelta(days=30)
-    
+
     # Get all invoices for this owner
     invoices = Invoice.objects.filter(
         property__owner=owner,
         created_at__range=[start_date, end_date]
     )
-    
+
     # Calculate total revenue
     total_revenue = invoices.aggregate(Sum('total_amount'))['total_amount__sum'] or 0
-    
+
     # Calculate paid vs pending amounts
     paid_amount = invoices.filter(status='paid').aggregate(
         Sum('total_amount'))['total_amount__sum'] or 0
     pending_amount = invoices.filter(status='pending').aggregate(
         Sum('total_amount'))['total_amount__sum'] or 0
-    
+
     # Get revenue by property
     property_revenue = list(invoices.values('property__title').annotate(
         total=Sum('total_amount')
     ).order_by('-total'))
-    
+
     # Get payment type distribution
     payment_types = list(invoices.values('payment_type').annotate(
         count=Sum('total_amount')
     ).order_by('-count'))
-    
+
     # Get monthly trend
     monthly_trend = list(invoices.filter(
         status='paid'
     ).values('created_at__month').annotate(
         total=Sum('total_amount')
     ).order_by('created_at__month'))
-    
+
     context = {
         'total_revenue': total_revenue,
         'paid_amount': paid_amount,
@@ -637,7 +735,7 @@ def property_analytics(request):
         'start_date': start_date,
         'end_date': end_date,
     }
-    
+
     return render(request, 'accounts/property_analytics.html', context)
 
 @login_required
@@ -647,22 +745,24 @@ def subscription_edit(request, package_id):
         return redirect('accounts:dashboard')
 
     package = get_object_or_404(Subscription, id=package_id)
-    
+
     if request.method == 'POST':
+        print("POST data:", request.POST)
         form = SubscriptionForm(request.POST, instance=package)
         if form.is_valid():
             form.save()
             messages.success(request, 'Package updated successfully.')
             return redirect('accounts:dashboard')
+        else:
+            print("Form errors:", form.errors)
     else:
         form = SubscriptionForm(instance=package)
-    
-    context = {
+
+    return render(request, 'accounts/subscription_form.html', {
         'form': form,
         'package': package,
         'is_edit': True
-    }
-    return render(request, 'accounts/subscription_form.html', context)
+    })
 
 @login_required
 def create_subscription(request):
@@ -689,7 +789,7 @@ def create_subscription(request):
             return redirect('accounts:dashboard')
         except Exception as e:
             messages.error(request, f'Error creating subscription: {str(e)}')
-    
+
     form = SubscriptionForm()
     context = {
         'form': form
@@ -701,10 +801,10 @@ def property_owner_detail(request, pk):
     if not request.user.is_superuser:
         messages.error(request, "You don't have permission to view this page.")
         return redirect('accounts:dashboard')
-    
+
     owner = get_object_or_404(PropertyOwner, pk=pk)
     properties = Property.objects.filter(owner=owner)
-    
+
     return render(request, 'accounts/property_owner_detail.html', {
         'owner': owner,
         'properties': properties,
@@ -715,63 +815,72 @@ def verify_property_owner(request, pk):
     if not request.user.is_superuser:
         messages.error(request, "You don't have permission to perform this action.")
         return redirect('accounts:dashboard')
-    
+
     if request.method == 'POST':
         owner = get_object_or_404(PropertyOwner, pk=pk)
         owner.verification_status = True
         owner.save()
-        
+
         # Create notification for property owner
-        create_notification(
+        """create_notification(
             request,
             recipient=owner.user,
             notification_type='account_verified',
             title='Account Verified',
             message='Your property owner account has been verified by the administrator.',
             related_object=owner
-        )
-        
+        )"""
+
         messages.success(request, f'Property owner {owner.user.get_full_name()} has been verified.')
-    
+
     return redirect('accounts:dashboard')
+
+from django.shortcuts import render
 
 @login_required
 def delete_property_owner(request, pk):
     if not request.user.is_superuser:
         messages.error(request, "You don't have permission to perform this action.")
         return redirect('accounts:dashboard')
-    
+
+    owner = get_object_or_404(PropertyOwner, pk=pk)
+    user = owner.user
+
     if request.method == 'POST':
-        owner = get_object_or_404(PropertyOwner, pk=pk)
-        user = owner.user
-        
-        # Delete the user and related data
         try:
             with transaction.atomic():
                 # Delete properties and related data first
                 properties = Property.objects.filter(owner=owner)
                 for property in properties:
                     property.delete()
-                
+
                 # Delete the property owner and user
                 owner.delete()
                 user.delete()
-                
+
                 messages.success(request, f'Property owner {user.get_full_name()} has been deleted.')
+                return redirect('accounts:dashboard')
         except Exception as e:
             messages.error(request, f'Error deleting property owner: {str(e)}')
-    
-    return redirect('accounts:superadmin_dashboard')
+            return redirect('accounts:dashboard')
+
+    # Render confirmation page
+    context = {
+        'owner': owner,
+        'user_full_name': user.get_full_name(),
+    }
+    return render(request, 'accounts/confirm_delete_owner.html', context)
+
 
 @login_required
 def subscription_list(request):
     if not request.user.is_property_owner():
         messages.error(request, "Access denied. Only property owners can view subscriptions.")
         return redirect('home')
-    
+
     subscriptions = Subscription.objects.filter(is_active=True)
     current_subscription = None
-    
+
     try:
         current_subscription = PropertyOwnerSubscription.objects.filter(
             property_owner=request.user.propertyowner,
@@ -780,7 +889,7 @@ def subscription_list(request):
         ).first()
     except PropertyOwnerSubscription.DoesNotExist:
         pass
-    
+
     context = {
         'subscriptions': subscriptions,
         'current_subscription': current_subscription
@@ -792,15 +901,15 @@ def upgrade_subscription(request, subscription_id):
     if not request.user.is_property_owner():
         messages.error(request, "Access denied. Only property owners can upgrade subscriptions.")
         return redirect('home')
-    
+
     try:
         new_subscription = Subscription.objects.get(id=subscription_id, is_active=True)
         property_owner = request.user.propertyowner
-        
+
         # Redirect to subscription view with the selected subscription
         request.session['selected_subscription_id'] = subscription_id
         return redirect('accounts:subscription')
-        
+
     except Subscription.DoesNotExist:
         messages.error(request, "Invalid subscription selected.")
         return redirect('accounts:subscription_list')
@@ -817,5 +926,5 @@ def select_user_type(request):
         return redirect('accounts:dashboard')
     elif request.user.is_property_manager():
         return redirect('accounts:dashboard')
-    
+
     return render(request, 'accounts/select_user_type.html')

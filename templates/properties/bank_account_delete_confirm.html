@@ -16,7 +16,7 @@
                         <form method="post" action="{% url 'properties:bank_account_delete' property.pk bank_account.pk %}">
                             {% csrf_token %}
                             <div class="d-flex justify-content-between">
-                                <a href="{% url 'properties:property_detail' property.pk account_pk %}" class="btn btn-secondary">Cancel</a>
+                                <a href="{% url 'properties:property_detail' property.pk  %}" class="btn btn-secondary">Cancel</a>
                                 <button type="submit" class="btn btn-danger">Delete Bank Account</button>
                             </div>
                         </form>

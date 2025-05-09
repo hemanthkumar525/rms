@@ -12,6 +12,31 @@
         </a>
     </div>
 
+    <!-- Property Images -->
+    {% if property.images.exists %}
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0 ">Property Images</h5>
+        </div>
+        <div class="card-body">
+            <div class="row g-3">
+                {% for image in property.images.all %}
+                <div class="col-md-4">
+                    <div class="card">
+                        <img src="{{ image.image.url }}" class="card-img-top" alt="Property Image">
+                        {% if image.caption %}
+                        <div class="card-body">
+                            <p class="card-text">{{ image.caption }}</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
     <!-- Progress Flow-->
     <div class="progress-flow mb-5">
         <div class="row justify-content-center">
@@ -61,7 +86,7 @@
         </div>
     </div>
 
-    
+
 </div>
 
 <!-- Styles for Progress Flow -->
@@ -271,7 +296,7 @@
         <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
             <h5 class="mb-0">Property Units</h5>
             <a href="{% url 'properties:unit_create' property_pk=property.id %}" class="btn btn-light btn-sm">
-                <i class="fas fa-plus"></i> New Unit
+                <i class="fas fa-house-user"></i> New Unit
             </a>
         </div>
         <div class="card-body">
@@ -325,7 +350,7 @@
                                                 <div>
                                                     <strong>{{ active_lease.tenant.user.first_name }} {{ active_lease.tenant.user.last_name }}</strong>
                                                     <br>
-                                                    
+
                                                 </div>
                                             </div>
                                         {% else %}
@@ -352,15 +377,15 @@
                                     </td>
                                     <td>
                                         <div class="btn-group">
-                                            {% if not active_lease %}
-                                                <a href="{% url 'properties:lease_agreement_create' property_pk=property.id %}?unit={{ unit.id }}" 
-                                                   class="btn btn-sm btn-outline-success">
-                                                    <i class="fas fa-file-signature"></i> Create Lease
-                                                </a>
-                                            {% else %}
-                                                <a href="{% url 'properties:get_lease_details' lease_id=active_lease.id %}" 
+                                            {% if active_lease %}
+                                                <a href="{% url 'properties:get_lease_details' lease_id=active_lease.id %}"
                                                    class="btn btn-sm btn-outline-primary">
                                                     <i class="fas fa-eye"></i> View Lease
+                                                </a>
+                                            {% else %}
+                                                <a href="{% url 'properties:lease_agreement_create' property_pk=property.id %}?unit={{ unit.id }}"
+                                                   class="btn btn-sm btn-outline-success">
+                                                    <i class="fas fa-file-signature"></i> Create Lease
                                                 </a>
                                             {% endif %}
                                         </div>
@@ -419,9 +444,12 @@
                                 <td>
                                     <div class="btn-group">
                                         {% if request.user.is_property_owner and property.owner.user == request.user %}
-                                        <button type="button" class="btn btn-sm btn-danger" title="Remove Tenant">
+                                        <a href="{% url 'properties:tenant_edit' tenant_pk=tenant_property.tenant.pk %}" type="button" class="btn btn-sm btn-primary" title="Edit Tenant">
+                                            <i class="fas fa-user-edit"></i>
+                                        </a>
+                                        <a href="{% url 'properties:tenant_delete' tenant_pk=tenant_property.tenant.pk %}" type="button" class="btn btn-sm btn-primary" title="Remove Tenant">
                                             <i class="fas fa-user-minus"></i>
-                                        </button>
+                                        </a>
                                         {% endif %}
                                     </div>
                                 </td>
@@ -443,7 +471,7 @@
         <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
             <h5 class="mb-0">Payment Accounts</h5>
             <a href="{% url 'properties:bank_account_create' property.pk %}" class="btn btn-light btn-sm">
-                <i class="fas fa-plus"></i> New Account
+                <i class="fas fa-landmark"></i> New Account
             </a>
         </div>
         <div class="card-body">
@@ -454,7 +482,6 @@
                             <tr>
                                 <th>Title</th>
                                 <th>Account Type</th>
-                                <th>Mode</th>
                                 <th>Status</th>
                                 <th>Actions</th>
                             </tr>
@@ -464,17 +491,15 @@
                             <tr>
                                 <td>{{ account.title }}</td>
                                 <td>{{ account.get_account_type_display }}</td>
-                                <td>{{ account.get_payment_mode_display }}</td>
                                 <td>
-                                    <span class="badge {% if account.is_active %}bg-success{% else %}bg-danger{% endif %}">
-                                        {{ account.is_active|yesno:"Active,Inactive" }}
+                                    <span class="badge {% if account.status == 'Active' %}bg-success{% else %}bg-danger{% endif %}">
+                                        {{ account.status }}
                                     </span>
-                                </td>
+                                    </td>
                                 <td>
                                     <div class="btn-group">
-                                        <a href="{% url 'properties:bank_account_delete' property.pk account.pk %}" class="btn btn-sm btn-danger">
-                                            <i class="fas fa-trash"></i>
-                                        </a>
+                                        <a href="{% url 'properties:bank_account_edit' property.pk account.pk %}" class="btn btn-sm btn-outline-primary"><i class="fas fa-edit"></i></a>
+                                        <a href="{% url 'properties:bank_account_delete' property.pk account.pk %}" class="btn btn-sm btn-danger"><i class="fas fa-trash"></i></a>
                                     </div>
                                 </td>
                             </tr>
@@ -500,11 +525,9 @@
                             <i class="fas fa-list"></i> All Invoices
                         </a>
                     {% endif %}
-                    {% if property.leaseagreement_set.exists %}
-                        <a href="{% url 'properties:invoice_create' lease_id=property.leaseagreement_set.first.id %}" class="btn btn-light btn-sm ms-2">
-                            <i class="fas fa-plus"></i> Add Invoice
+                    <a href="{% url 'properties:select_lease_for_invoice' property.id %}" class="btn btn-sm btn-light">
+                        <i class="fas fa-file-invoice"></i> Create Invoice
                         </a>
-                    {% endif %}
                 </div>
             {% endif %}
         </div>
@@ -544,9 +567,9 @@
                                             <i class="fas fa-eye"></i>
                                         </a>
                                         {% if request.user.is_property_owner and property.owner.user == request.user %}
-                                            <a href="{% url 'properties:invoice_update' pk=invoice.id %}" class="btn btn-sm btn-warning" title="Edit Invoice">
+                                            <!-- a href="{% url 'properties:invoice_update' pk=invoice.id %}" class="btn btn-sm btn-warning" title="Edit Invoice">
                                                 <i class="fas fa-edit"></i>
-                                            </a>
+                                            </a-->
                                             {% if invoice.status != 'paid' %}
                                                 <a href="{% url 'properties:mark_invoice_paid' pk=invoice.id %}" class="btn btn-sm btn-success" title="Mark as Paid"
                                                    onclick="return confirm('Are you sure you want to mark this invoice as paid?')">
@@ -583,7 +606,7 @@
         <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
             <h5 class="mb-0">Lease Agreements</h5>
             <a href="{% url 'properties:lease_agreement_create' property_pk=property.pk %}" class="btn btn-light btn-sm">
-                <i class="fas fa-plus"></i> New Lease
+                <i class="fas fa-handshake"></i> New Lease
             </a>
         </div>
         <div class="card-body">
@@ -615,9 +638,10 @@
                                     </span>
                                 </td>
                                 <td>
-                                    <button class="btn btn-sm btn-info" data-bs-toggle="modal" data-bs-target="#leaseDetailsModal{{ lease.id }}">
-                                        <i class="fas fa-eye"></i>
-                                    </button>
+                                    <a href="{% url 'properties:get_lease_details' lease_id=lease.id %}"
+                                                   class="btn btn-sm btn-outline-primary">
+                                                    <i class="fas fa-eye"></i> View Lease
+                                    </a>
                                     {% if lease.status == 'pending' %}
                                     <button class="btn btn-sm btn-success change-lease-status" data-lease-id="{{ lease.id }}" data-property-id="{{ property.id }}" data-status="active">
                                         <i class="fas fa-check"></i> Activate
@@ -644,7 +668,7 @@
                 const propertyId = button.getAttribute('data-property-id');
                 const url = `/properties/${propertyId}/bank-accounts/${accountId}/delete/`;
                 const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
-                
+
                 fetch(url, {
                     method: 'POST',
                     headers: {
@@ -686,7 +710,7 @@
                 const leaseId = this.dataset.leaseId;
                 const propertyId = this.dataset.propertyId;
                 const newStatus = this.dataset.status;
-                
+
                 if (confirm('Are you sure you want to change the lease status?')) {
                     // Get CSRF token from cookie
                     const csrftoken = document.cookie.split('; ')

@@ -90,7 +90,7 @@
                             </div>
                         </div>
                         <div class="flex-grow-1">
-                            <h3 class="mb-0 fw-bold">${{ total_amount|floatformat:2 }}</h3>
+                            <h3 class="mb-0 fw-bold">${{ invoice_total|floatformat:2 }}</h3>
                             <p class="text-muted mb-0">Monthly Revenue</p>
                         </div>
                     </div>
@@ -159,7 +159,7 @@
                                     <td>
                                         <div class="d-flex align-items-center">
                                             {% if property.images.first %}
-                                                <img src="{{ property.images.first.image.url }}" 
+                                                <img src="{{ property.images.first.image.url }}"
                                                      class="rounded" alt="{{ property.title }}"
                                                      style="width: 40px; height: 40px; object-fit: cover;">
                                             {% else %}
@@ -184,17 +184,17 @@
                                     </td>
                                     <td>
                                         <div class="progress">
-                                            <div class="progress-bar" role="progressbar" 
-                                                style="width: {{ property.occupancy_rate }}%; background-color: var(--primary-color)" 
-                                                aria-valuenow="{{ property.occupancy_rate }}" 
-                                                aria-valuemin="0" 
-                                                aria-valuemax="100">
+                                            <div class="progress-bar" role="progressbar"
+                                                 style="width: {{ property.occupancy_rate }}%; background-color: var(--primary-color)"
+                                                 aria-valuenow="{{ property.occupancy_rate }}"
+                                                 aria-valuemin="0"
+                                                 aria-valuemax="100">
                                                 {{ property.occupancy_rate }}%
                                             </div>
                                         </div>
                                     </td>
                                     <td>
-                                        <a href="{% url 'properties:property_detail' property.id %}" 
+                                        <a href="{% url 'properties:property_detail' property.id %}"
                                            class="btn btn-sm btn-light me-2 hover-lift">
                                             <i class="fas fa-eye"></i>
                                         </a>
@@ -247,7 +247,7 @@
     .bg-success-soft { background-color: rgba(5, 150, 105, 0.1); }
     .bg-info-soft { background-color: rgba(8, 145, 178, 0.1); }
     .bg-warning-soft { background-color: rgba(217, 119, 6, 0.1); }
-    
+
     .avatar {
         width: 48px;
         height: 48px;
@@ -255,15 +255,15 @@
         align-items: center;
         justify-content: center;
     }
-    
+
     .hover-lift {
         transition: transform 0.2s ease;
     }
-    
+
     .hover-lift:hover {
         transform: translateY(-2px);
     }
-    
+
     .table > :not(caption) > * > * {
         padding: 1rem;
     }

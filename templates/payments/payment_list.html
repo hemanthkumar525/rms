@@ -106,18 +106,18 @@
                                     </span>
                                 </td>
                                 <td>
-                                    <a href="{% url 'payments:invoice_detail' invoice.id %}" 
+                                    <a href="{% url 'properties:invoice_detail' invoice.id %}"
                                        class="btn btn-sm btn-info">
                                         <i class="fas fa-eye"></i>
                                     </a>
                                     {% if user.is_property_owner %}
-                                    <a href="{% url 'payments:invoice_update' invoice.id %}" 
+                                    <a href="{% url 'payments:invoice_update' invoice.id %}"
                                        class="btn btn-sm btn-primary">
                                         <i class="fas fa-edit"></i>
                                     </a>
                                     {% endif %}
                                     {% if user.is_tenant and invoice.status == 'pending' %}
-                                    <a href="{% url 'payments:tenant_make_payment' invoice.id %}" 
+                                    <a href="{% url 'payments:tenant_make_payment' invoice.id %}"
                                        class="btn btn-sm btn-success">
                                         <i class="fas fa-money-bill"></i> Pay
                                     </a>

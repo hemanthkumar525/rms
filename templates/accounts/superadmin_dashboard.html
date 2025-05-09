@@ -84,9 +84,9 @@
                                     <a href="{% url 'accounts:subscription_edit' package.id %}" class="btn btn-sm btn-outline-primary">
                                         <i class="fas fa-edit"></i>
                                     </a>
-                                    <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deletePackageModal{{ package.id }}">
+                                    <a href="{% url 'accounts:subscription_delete' package.id %}" class="btn btn-sm btn-outline-danger">
                                         <i class="fas fa-trash"></i>
-                                    </button>
+                                    </a>
                                 </div>
                             </td>
                         </tr>
@@ -164,9 +164,9 @@
                                     </form>
                                     {% endif %}
                                     <!-- Delete Button -->
-                                    <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteOwnerModal{{ owner.id }}" title="Delete Owner">
+                                    <a href="{% url 'accounts:delete_property_owner' owner.id %}" class="btn btn-sm btn-outline-danger"  title="Delete Owner">
                                         <i class="fas fa-ban"></i>
-                                    </button>
+                                    </a>
                                 </div>
 
                                 <!-- Delete Confirmation Modal -->
@@ -214,12 +214,12 @@
     .border-left-warning {
         border-left: .25rem solid #36b9cc!important;
     }
-    
+
     .card-header {
         background-color: #f8f9fc;
         border-bottom: 1px solid #e3e6f0;
     }
-    
+
     .table th {
         background-color: #f8f9fc;
     }

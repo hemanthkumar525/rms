@@ -11,12 +11,12 @@ urlpatterns = [
     path('<int:pk>/edit/', views.property_edit, name='property_edit'),
     path('<int:pk>/delete/', views.property_delete, name='property_delete'),
     path('webhook/stripe/', views.stripe_webhook, name='stripe_webhook'),
-    
+
     # Property Unit URLs
     path('<int:property_pk>/unit/create/', views.unit_create, name='unit_create'),
     path('<int:property_pk>/unit/<int:pk>/update/', views.unit_update, name='unit_update'),
     path('<int:property_pk>/unit/<int:pk>/delete/', views.unit_delete, name='unit_delete'),
-    
+
     # Lease Agreement URLs
     path('lease/', views.lease_list, name='lease_list'),
     path('lease/<int:pk>/', views.lease_detail, name='lease_detail'),
@@ -33,9 +33,10 @@ urlpatterns = [
     path('maintenance/create/<int:unit_pk>/unit', views.maintenance_request_create, name='maintenance_request_create'),
     path('maintenance/<int:pk>/', views.maintenance_request_detail, name='maintenance_request_detail'),
     path('maintenance/<int:pk>/change-status/', views.maintenance_request_change_status, name='maintenance_request_change_status'),
-    
+
     # Invoice URLs
     path('invoices/', invoice_list, name='invoice_list'),
+    path('<int:property_id>/invoice/select-lease/', views.select_lease_for_invoice, name='select_lease_for_invoice'),
     path('lease/<int:lease_id>/invoice/create/', views.invoice_create, name='invoice_create'),
     path('invoice/<int:pk>/', views.invoice_detail, name='invoice_detail'),
     path('invoice/<int:pk>/update/', views.invoice_update, name='invoice_update'),
@@ -46,6 +47,7 @@ urlpatterns = [
 
     # Bank Account URLs
     path('properties/<int:property_pk>/bank-accounts/<int:account_pk>/delete/', views.bank_account_delete, name='bank_account_delete'),
+    path('<int:property_pk>/bank-account/<int:pk>/edit/', views.bank_account_edit, name='bank_account_edit'),
     path('<int:property_pk>/bank-account/create/', views.bank_account_create, name='bank_account_create'),
 
     #new payment
@@ -59,7 +61,11 @@ urlpatterns = [
     path('property-managers/<int:pk>/edit/', views.property_manager_edit, name='property_manager_edit'),
     path('property-managers/<int:pk>/delete/', views.property_manager_delete, name='property_manager_delete'),
 
+    # Tenant URLs
+    path('tenant/<int:tenant_pk>/delete/', views.tenant_delete, name='tenant_delete'),
+    path('tenant/<int:tenant_pk>/edit/', views.tenant_edit, name='tenant_edit'),
+
     #property analytics
     path('property-analytics/', views.property_analytics, name='property_analytics'),
-    
+
 ]

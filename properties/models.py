@@ -13,9 +13,9 @@ class Property(models.Model):
     PROPERTY_TYPE_CHOICES = (
         ('residential', 'Residential'),
         ('commercial', 'Commercial'),
-        
+
     )
-    
+
     owner = models.ForeignKey(PropertyOwner, on_delete=models.CASCADE)
     title = models.CharField(max_length=200)
     property_type = models.CharField(max_length=20, choices=PROPERTY_TYPE_CHOICES)
@@ -23,6 +23,7 @@ class Property(models.Model):
     city = models.CharField(max_length=100)
     state = models.CharField(max_length=100)
     is_available = models.BooleanField(default=True)
+    is_occupied = models.BooleanField(default=False)
     postal_code = models.CharField(max_length=10)
     description = models.TextField(blank=True)  # Add back description field
     created_at = models.DateTimeField(auto_now_add=True)
@@ -30,7 +31,7 @@ class Property(models.Model):
 
     def get_available_account_types(self):
         """Get payment gateway types available for this property"""
-        return BankAccount.ACCOUNT_TYPES 
+        return BankAccount.ACCOUNT_TYPES
 
     @property
     def active_leases_count(self):
@@ -52,9 +53,9 @@ class Property(models.Model):
 
 
     # Keep only property-wide fields
-    
+
 class PropertyUnit(models.Model):
-    
+
     property = models.ForeignKey(Property, on_delete=models.CASCADE, related_name='units')
     unit_number = models.CharField(max_length=20)
     monthly_rent = models.DecimalField(max_digits=10, decimal_places=2)
@@ -65,36 +66,36 @@ class PropertyUnit(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     business_type = models.CharField(max_length=20, blank=True, null=True)
-    kitchen = models.PositiveIntegerField()
-    
-    
+    kitchen = models.PositiveIntegerField(default=0)
+
+
     def __str__(self):
         return f"{self.property.title} - {self.unit_number}"
-    
+
 
 
 class PropertyImage(models.Model):
     property = models.ForeignKey(Property, related_name='images', on_delete=models.CASCADE)
     image = models.ImageField(upload_to='property_images/')
     caption = models.CharField(max_length=200, blank=True)
-    
+
     def __str__(self):
         return f"Image for {self.property.title}"
 
 
 class BankAccount(models.Model):
-    
+
 
     ACCOUNT_TYPES = (
         ('Paypal', 'Paypal'),
         ('Stripe', 'Stripe'),
     )
-    
+
     STATUS_CHOICES = (
         ('Active', 'Active'),
         ('Inactive', 'Inactive'),
     )
-    
+
     MODE_CHOICES = (
         ('Sandbox', 'Sandbox'),
         ('Live', 'Live'),
@@ -102,7 +103,7 @@ class BankAccount(models.Model):
     property = models.ForeignKey(Property, on_delete=models.CASCADE, related_name='bank_accounts')
     title = models.CharField(max_length=100)
     account_type = models.CharField(max_length=20, choices=ACCOUNT_TYPES)
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Active')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='active')
     account_mode = models.CharField(max_length=20, choices=MODE_CHOICES, default='Sandbox')
     client_id = models.CharField(max_length=255)
     secret_key = models.CharField(max_length=255)
@@ -115,7 +116,7 @@ class BankAccount(models.Model):
     class Meta:
         ordering = ['-created_at']
 
-   
+
 
 
 
@@ -126,7 +127,7 @@ class LeaseAgreement(models.Model):
         ('terminated', 'Terminated'),
         ('expired', 'Expired'),
     )
-    
+
     property = models.ForeignKey(Property, on_delete=models.CASCADE)
     tenant = models.ForeignKey(Tenant, on_delete=models.CASCADE)
     bank_account = models.ForeignKey(BankAccount, on_delete=models.SET_NULL, null=True, blank=True)
@@ -146,12 +147,12 @@ class LeaseAgreement(models.Model):
     document = models.FileField(upload_to='lease_documents/', null=True, blank=True)
     property_unit = models.ForeignKey(PropertyUnit, on_delete=models.SET_NULL, null=True, blank=True, related_name='lease_agreements')
     created_at = models.DateTimeField(auto_now_add=True)
-    
+
     def next_payment_date(self):
         """Calculate the next payment due date"""
         today = timezone.now().date()
         current_month = today.replace(day=self.rent_due_day)
-        
+
         if today > current_month:
             # If we've passed the due day this month, payment is due next month
             if current_month.month == 12:
@@ -161,7 +162,7 @@ class LeaseAgreement(models.Model):
         else:
             # If we haven't reached the due day yet, payment is due this month
             next_payment = current_month
-            
+
         return next_payment
 
     def __str__(self):
@@ -174,7 +175,7 @@ class TenantProperty(models.Model):
         ('active', 'Active'),
         ('inactive', 'Inactive'),
     )
-    
+
     tenant = models.ForeignKey(Tenant, on_delete=models.CASCADE, related_name='tenant_properties')
     property = models.ForeignKey(Property, on_delete=models.CASCADE, related_name='property_tenants')
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
@@ -202,7 +203,7 @@ class PropertyMaintenance(models.Model):
         ('completed', 'Completed'),
         ('cancelled', 'Cancelled'),
     )
-    
+
     property = models.ForeignKey(Property, on_delete=models.CASCADE)
     property_unit = models.ForeignKey(PropertyUnit, on_delete=models.CASCADE, related_name='maintenance_requests',null=True,blank=True)
     reported_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
@@ -212,7 +213,7 @@ class PropertyMaintenance(models.Model):
     priority = models.CharField(max_length=20, choices=[('low', 'Low'), ('medium', 'Medium'), ('high', 'High')])
     reported_date = models.DateTimeField(auto_now_add=True)
     resolved_date = models.DateTimeField(null=True, blank=True)
-    
+
     def __str__(self):
         return f"{self.title} - {self.property.title}"
 

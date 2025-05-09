@@ -1,4 +1,4 @@
-{% extends 'base.html' %}
+z{% extends 'base.html' %}
 {% load static %}
 
 {% block extra_css %}
@@ -8,10 +8,10 @@
 {% block content %}
 <div class="container mt-4">
     <h2>Overall Property Portfolio Analytics</h2>
-    
+
     <!-- Summary Cards -->
     <div class="row mt-4">
-        <div class="col-md-3">
+        <div class="col-md-3" style="margin-bottom: 1rem;" >
             <div class="card">
                 <div class="card-body">
                     <h5 class="card-title">Properties</h5>
@@ -20,7 +20,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
+        <div class="col-md-3" style="margin-bottom: 1rem;">
             <div class="card">
                 <div class="card-body">
                     <h5 class="card-title">Overall Occupancy</h5>
@@ -29,7 +29,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
+        <div class="col-md-3" style="margin-bottom: 1rem;">
             <div class="card">
                 <div class="card-body">
                     <h5 class="card-title">Average Rent</h5>
@@ -38,7 +38,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
+        <div class="col-md-3" style="margin-bottom: 1rem;">
             <div class="card">
                 <div class="card-body">
                     <h5 class="card-title">Total Tenants</h5>
@@ -49,12 +49,12 @@
         </div>
     </div>
 
-    <!-- Charts Row -->
+    <!-- Charts -->
     <div class="row mt-4">
         <div class="col-md-6">
             <div class="card">
                 <div class="card-body">
-                    <h5 class="card-title">Rent Trends</h5>
+                    <h5 class="card-title">Rent Trends (6 Months)</h5>
                     <div style="height: 300px;">
                         <canvas id="rentTrendChart"></canvas>
                     </div>
@@ -64,7 +64,7 @@
         <div class="col-md-6">
             <div class="card">
                 <div class="card-body">
-                    <h5 class="card-title">Revenue Trends</h5>
+                    <h5 class="card-title">Revenue Trends (6 Months)</h5>
                     <div style="height: 300px;">
                         <canvas id="revenueTrendChart"></canvas>
                     </div>
@@ -73,59 +73,54 @@
         </div>
     </div>
 
-    <!-- Top Performers>
+    <!-- Performance Tables -->
     <div class="row mt-4">
         <div class="col-md-6">
             <div class="card">
                 <div class="card-body">
                     <h5 class="card-title">Best Performing Properties</h5>
-                    <div class="table-responsive">
-                        <table class="table">
-                            <thead>
-                                <tr>
-                                    <th>Property</th>
-                                    <th>Monthly Revenue</th>
-                                    <th>Occupancy</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for prop in best_performing %}
-                                <tr>
-                                    <td>{{ prop.name }}</td>
-                                    <td>${{ prop.analytics.monthly_revenue }}</td>
-                                    <td>{{ prop.analytics.occupancy_rate }}%</td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Property</th>
+                                <th>Occupancy</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for prop in best_performing %}
+                            <tr>
+                                <td>{{ prop.name }}</td>
+                                <td>{{ prop.analytics.occupancy_rate }}%</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
                 </div>
             </div>
-        </div-->
+        </div>
+
         <div class="col-md-6">
             <div class="card">
                 <div class="card-body">
                     <h5 class="card-title">Highest Occupancy Properties</h5>
-                    <div class="table-responsive">
-                        <table class="table">
-                            <thead>
-                                <tr>
-                                    <th>Property</th>
-                                    <th>Occupancy</th>
-                                    <th>Units Occupied</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for prop in highest_occupancy %}
-                                <tr>
-                                    <td>{{ prop.name }}</td>
-                                    <td>{{ prop.analytics.occupancy_rate }}%</td>
-                                    <td>{{ prop.analytics.occupied_units }}/{{ prop.analytics.total_units }}</td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Property</th>
+                                <th>Occupancy</th>
+                                <th>Units</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for prop in highest_occupancy %}
+                            <tr>
+                                <td>{{ prop.name }}</td>
+                                <td>{{ prop.analytics.occupancy_rate }}%</td>
+                                <td>{{ prop.analytics.occupied_units }}/{{ prop.analytics.total_units }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
@@ -135,99 +130,46 @@
 
 {% block extra_js %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.js"></script>
-<style>
-    .chart-container {
-        position: relative;
-        height: 100%;
-        width: 100%;
-    }
-</style>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Rent Trend Chart
-    var rentCtx = document.getElementById('rentTrendChart').getContext('2d');
-    var rentChartData = {
-        dates: {{ revenue_chart_data.dates|safe }},
-        amounts: {{ revenue_chart_data.amounts|safe }}
-    };
-    
-    new Chart(rentCtx, {
+    // Rent Chart
+    const rentChart = new Chart(document.getElementById('rentTrendChart').getContext('2d'), {
         type: 'line',
         data: {
-            labels: rentChartData.dates,
+            labels: {{ rent_chart_data.dates|safe }},
             datasets: [{
-                label: 'Average Monthly Rent',
-                data: rentChartData.rents,
+                label: 'Avg Rent',
+                data: {{ rent_chart_data.rents|safe }},
                 borderColor: '#96351e',
-                tension: 0.1,
-                fill: false
+                fill: false,
+                tension: 0.3
             }]
         },
         options: {
             responsive: true,
-            maintainAspectRatio: false,
             plugins: {
-                legend: {
-                    position: 'top'
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    title: {
-                        display: true,
-                        text: 'Rent Amount ($)'
-                    },
-                    ticks: {
-                        callback: function(value, index, values) {
-                            return '$' + value.toLocaleString();
-                        }
-                    }
-                }
+                legend: { position: 'top' }
             }
         }
     });
 
-    // Revenue Trend Chart
-    var revenueCtx = document.getElementById('revenueTrendChart').getContext('2d');
-    var revenueChartData = {
-        dates: {{ revenue_chart_data.dates|safe }},
-        amounts: {{ revenue_chart_data.amounts|safe }}
-    };
-    
-    new Chart(revenueCtx, {
+    // Revenue Chart
+    const revenueChart = new Chart(document.getElementById('revenueTrendChart').getContext('2d'), {
         type: 'bar',
         data: {
-            labels: revenueChartData.dates,
+            labels: {{ revenue_chart_data.dates|safe }},
             datasets: [{
-                label: 'Monthly Revenue',
-                data: revenueChartData.amounts,
+                label: 'Revenue',
+                data: {{ revenue_chart_data.amounts|safe }},
                 backgroundColor: '#96351e',
-                borderColor: '#cb9800',
+                borderColor: 'rgba(255, 99, 132, 0.5)',
                 borderWidth: 1
             }]
         },
         options: {
             responsive: true,
-            maintainAspectRatio: false,
             plugins: {
-                legend: {
-                    position: 'top'
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    title: {
-                        display: true,
-                        text: 'Revenue ($)'
-                    },
-                    ticks: {
-                        callback: function(value, index, values) {
-                            return '$' + value.toLocaleString();
-                        }
-                    }
-                }
+                legend: { position: 'top' }
             }
         }
     });

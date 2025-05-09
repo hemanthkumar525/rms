@@ -11,21 +11,21 @@ class CustomUser(AbstractUser):
         ('tenant', 'Tenant'),
         ('property_manager', 'Property Manager')
     )
-    
+
     user_type = models.CharField(max_length=20, choices=USER_TYPE_CHOICES)
     phone_number = models.CharField(max_length=15)
     address = models.TextField()
     profile_picture = models.ImageField(upload_to='profile_pics/', null=True, blank=True)
-    
+
     def is_superadmin(self):
         return self.user_type == 'superadmin'
-    
+
     def is_property_owner(self):
         return self.user_type == 'property_owner'
-    
+
     def is_tenant(self):
         return self.user_type == 'tenant'
-    
+
     def is_property_manager(self):
         return self.user_type == 'property_manager'
 
@@ -34,7 +34,7 @@ class PropertyOwner(models.Model):
     company_name = models.CharField(max_length=100, blank=True)
     tax_id = models.CharField(max_length=50, blank=True)
     verification_status = models.BooleanField(default=False)
-    
+
     def __str__(self):
         return f"{self.user.get_full_name()} - {self.company_name}"
 
@@ -43,12 +43,12 @@ class Tenant(models.Model):
     emergency_contact = models.CharField(max_length=100)
     employment_info = models.TextField(blank=True)
     id_proof = models.FileField(upload_to='tenant_docs/', null=True)
-    
+
     def __str__(self):
         return self.user.get_full_name()
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    
+
     def __str__(self):
         return self.user.get_full_name()
 
@@ -73,9 +73,9 @@ class Subscription(models.Model):
         ('premium', 'Premium'),
         ('enterprise', 'Enterprise'),
     )
-    
+
     name = models.CharField(max_length=50)
-    type = models.CharField(max_length=20, choices=SUBSCRIPTION_TYPES)
+    type = models.CharField(max_length=20, choices=SUBSCRIPTION_TYPES,default='basic')
     price = models.DecimalField(max_digits=10, decimal_places=2)
     stripe_price_id = models.CharField(max_length=100, unique=True, null=True, blank=True)
     max_properties = models.IntegerField()
@@ -97,7 +97,7 @@ class PropertyOwnerSubscription(models.Model):
         ('expired', 'Expired'),
         ('cancelled', 'Cancelled'),
     )
-    
+
     PAYMENT_STATUS_CHOICES = (
         ('pending', 'Pending'),
         ('completed', 'Completed'),

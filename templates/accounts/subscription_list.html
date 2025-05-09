@@ -17,7 +17,7 @@
     {% endif %}
 
     <h2 class="mb-4">Subscription Plans</h2>
-    
+
     {% if current_subscription %}
     <div class="alert alert-info mb-4">
         <h5>Current Plan: {{ current_subscription.subscription.name }}</h5>
@@ -35,7 +35,7 @@
                     <h5 class="card-title mb-0">{{ subscription.name }}</h5>
                 </div>
                 <div class="card-body">
-                    <h3 class="card-title pricing-card-title">₹{{ subscription.price }}<small class="text-muted fw-light">/mo</small></h3>
+                    <h3 class="card-title pricing-card-title">$ {{ subscription.price }}<small class="text-muted fw-light">/mo</small></h3>
                     <ul class="list-unstyled mt-3 mb-4">
                         <li>Up to {{ subscription.max_properties }} properties</li>
                         <li>{{ subscription.max_units }} units per property</li>
@@ -43,7 +43,7 @@
                         <li>{{ feature }}</li>
                         {% endfor %}
                     </ul>
-                    
+
                     {% if current_subscription and current_subscription.subscription.id == subscription.id %}
                     <button class="btn btn-outline-primary w-100" disabled>Current Plan</button>
                     {% else %}

@@ -2,7 +2,7 @@
 {% load crispy_forms_tags %}
 
 {% block title %}
-{% if is_edit %}Edit{% else %}Create{% endif %} Subscription Package
+    {% if is_edit %}Edit{% else %}Create{% endif %} Subscription Package
 {% endblock %}
 
 {% block content %}
@@ -10,59 +10,80 @@
     <div class="row justify-content-center">
         <div class="col-md-8">
             <div class="card border-0 shadow-lg">
-                <div class="card-header bg-primary text-white py-3">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <h4 class="mb-0">{% if is_edit %}Edit{% else %}Create{% endif %} Subscription Package</h4>
-                        <a href="{% url 'accounts:dashboard' %}" class="btn btn-light btn-sm">
-                            <i class="fas fa-arrow-left me-1"></i> Back
-                        </a>
-                    </div>
+                <div class="card-header bg-primary text-white py-3 d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0">
+                        {% if is_edit %}Edit{% else %}Create{% endif %} Subscription Package
+                    </h4>
+                    <a href="{% url 'accounts:dashboard' %}" class="btn btn-light btn-sm">
+                        <i class="fas fa-arrow-left me-1"></i> Back
+                    </a>
                 </div>
                 <div class="card-body p-4">
                     <form method="post">
                         {% csrf_token %}
+                        {% if form.non_field_errors %}
+                            <div class="alert alert-danger">
+                                {{ form.non_field_errors }}
+                            </div>
+                        {% endif %}
+
                         <div class="row g-3">
                             <div class="col-md-6">
-                                <label for="Plan"></label>
+                                {{ form.name.label_tag }}
                                 {{ form.name }}
+                                {{ form.name.errors }}
                             </div>
                             <div class="col-md-6">
-                                <label for="price">Price</label>
+                                {{ form.price.label_tag }}
                                 {{ form.price }}
+                                {{ form.price.errors }}
                             </div>
                             <div class="col-md-6">
-                                <label for="duration_months">Duration (Months)</label>
+                                {{ form.duration_months.label_tag }}
                                 {{ form.duration_months }}
+                                {{ form.duration_months.errors }}
                             </div>
                             <div class="col-md-6">
-                                <label for="max_properties">Max Properties</label>
+                                {{ form.max_properties.label_tag }}
                                 {{ form.max_properties }}
+                                {{ form.max_properties.errors }}
+                            </div>
+                            <div class="col-md-6">
+                                {{ form.max_units.label_tag }}
+                                {{ form.max_units }}
+                                {{ form.max_units.errors }}
+                            </div>
+                            <div class="col-md-6">
+                                {{ form.stripe_price_id.label_tag }}
+                                {{ form.stripe_price_id }}
+                                {{ form.stripe_price_id.errors }}
+                            </div>
+                            <div class="col-md-6">
+                                {{ form.type.label_tag }}
+                                {{ form.type }}
+                                {{ form.type.errors }}
                             </div>
                             <div class="col-12">
+                                {{ form.description.label_tag }}
                                 {{ form.description }}
+                                {{ form.description.errors }}
                             </div>
-                            <div>
-                                <label for="max_units">Max units</label>
-                                {{ form.max_units}}
-                            </div>
-                            <div>
-                                <label for="price_id">Price Id(stripe)</label>
-                                {{ form.stripe_price_id}}
+                            <div class="col-12">
+                                {{ form.features.label_tag }}
+                                {{ form.features }}
+                                {{ form.features.errors }}
                             </div>
                             <div class="col-12">
                                 <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" id="is_active" name="is_active">
-                                    <label class="form-check-label" for="is_active">
-                                        Is Active
-                                    </label>
+                                    {{ form.is_active }}
+                                    {{ form.is_active.label_tag }}
+                                    {{ form.is_active.errors }}
                                 </div>
                             </div>
                         </div>
 
                         <div class="d-flex justify-content-end mt-4">
-                            <a href="{% url 'accounts:dashboard' %}" class="btn btn-secondary me-2">
-                                Cancel
-                            </a>
+                            <a href="{% url 'accounts:dashboard' %}" class="btn btn-secondary me-2">Cancel</a>
                             <button type="submit" class="btn btn-primary">
                                 {% if is_edit %}Update{% else %}Create{% endif %} Package
                             </button>
@@ -73,47 +94,4 @@
         </div>
     </div>
 </div>
-{% endblock %}
-
-{% block extra_css %}
-<style>
-    .card {
-        transition: all 0.3s ease;
-    }
-    .card:hover {
-        transform: translateY(-5px);
-    }
-    .form-group {
-        margin-bottom: 1rem;
-    }
-    input[type="text"],
-    input[type="number"],
-    textarea {
-        width: 100%;
-        padding: 0.375rem 0.75rem;
-        font-size: 1rem;
-        font-weight: 400;
-        line-height: 1.5;
-        color: #212529;
-        background-color: #fff;
-        border: 1px solid #ced4da;
-        border-radius: 0.25rem;
-        transition: border-color .15s ease-in-out,box-shadow .15s ease-in-out;
-    }
-    input[type="text"]:focus,
-    input[type="number"]:focus,
-    textarea:focus {
-        color: #212529;
-        background-color: #fff;
-        border-color: #86b7fe;
-        outline: 0;
-        box-shadow: 0 0 0 0.25rem rgba(13,110,253,.25);
-    }
-    textarea {
-        min-height: 100px;
-    }
-    .form-check-input {
-        margin-top: 0.3rem;
-    }
-</style>
 {% endblock %}

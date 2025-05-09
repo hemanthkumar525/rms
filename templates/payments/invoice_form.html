@@ -95,24 +95,29 @@
             width: '100%'
         });
 
-        // Handle lease agreement change
-        $('#id_lease_agreement').change(function() {
-            var leaseId = $(this).val();
-            if (leaseId) {
-                $.ajax({
-                    url: '{% url "payments:get_lease_details" %}',
-                    data: {
-                        'lease_id': leaseId
-                    },
-                    dataType: 'json',
-                    success: function(data) {
-                        $('#id_property_unit').val(data.property_unit_id).trigger('change');
-                        $('#id_tenant').val(data.tenant_id).trigger('change');
-                        $('#id_amount').val(data.rent_amount);
-                    }
-                });
+        // Function to update form fields when lease agreement changes
+        function updateFormFields() {
+            const leaseAgreementSelect = document.querySelector('select[name="lease_agreement"]');
+            const selectedLeaseId = leaseAgreementSelect.value;
+            
+            if (selectedLeaseId) {
+                fetch(`/payments/get-lease-details/?lease_id=${selectedLeaseId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        // Update tenant and property unit fields
+                        document.querySelector('select[name="tenant"]').value = data.tenant_id;
+                        document.querySelector('select[name="property_unit"]').value = data.property_unit_id;
+                        // Update amount field with rent amount
+                        document.querySelector('input[name="amount"]').value = data.rent_amount;
+                        // Trigger change events for select2
+                        $("select[name='tenant']").trigger('change');
+                        $("select[name='property_unit']").trigger('change');
+                    });
             }
-        });
+        }
+
+        // Handle lease agreement change
+        $("select[name='lease_agreement']").change(updateFormFields);
 
         // Calculate total amount when amount or late fee changes
         $('#id_amount, #id_late_fee').on('input', function() {
