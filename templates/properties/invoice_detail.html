@@ -88,17 +88,17 @@
                             <table class="table table-bordered">
                                 <tr>
                                     <th>Amount:</th>
-                                    <td class="text-end">₹{{ invoice.amount }}</td>
+                                    <td class="text-end">${{ invoice.amount }}</td>
                                 </tr>
                                 {% if invoice.late_fee > 0 %}
                                 <tr>
                                     <th>Late Fee:</th>
-                                    <td class="text-end">₹{{ invoice.late_fee }}</td>
+                                    <td class="text-end">${{ invoice.late_fee }}</td>
                                 </tr>
                                 {% endif %}
                                 <tr class="table-active">
                                     <th>Total Amount:</th>
-                                    <td class="text-end"><strong>₹{{ invoice.total_amount }}</strong></td>
+                                    <td class="text-end"><strong>${{ invoice.total_amount }}</strong></td>
                                 </tr>
                             </table>
                         </div>

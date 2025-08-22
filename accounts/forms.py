@@ -7,8 +7,7 @@ from .models import CustomUser, PropertyOwner, Tenant, Subscription
 class CustomUserCreationForm(UserCreationForm):
     class Meta(UserCreationForm.Meta):
         model = CustomUser
-        fields = ('username', 'email', 'first_name', 'last_name', 'phone_number',
-                 'address', 'profile_picture')
+        fields = ('username', 'email', 'first_name', 'last_name')
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -25,9 +24,6 @@ class CustomUserCreationForm(UserCreationForm):
                 Column('password1', css_class='form-group col-md-6 mb-3'),
                 Column('password2', css_class='form-group col-md-6 mb-3'),
             ),
-            'phone_number',
-            'address',
-            'profile_picture',
             Hidden('user_type', 'property_owner')
         )
         # Add Bootstrap classes
@@ -111,30 +107,22 @@ class UsernamePasswordResetForm(PasswordResetForm):
 class CustomUserChangeForm(UserChangeForm):
     class Meta:
         model = CustomUser
-        fields = ('username', 'email', 'first_name', 'last_name', 'phone_number',
-                 'address', 'profile_picture')
+        fields = ('username', 'email', 'first_name', 'last_name')
 
 class PropertyOwnerRegistrationForm(forms.ModelForm):
     company_name = forms.CharField(
-        required=True,
+        required=False,
         help_text="Enter your company or business name",
         widget=forms.TextInput(attrs={
             'class': 'form-control',
             'placeholder': 'Company Name'
         })
     )
-    tax_id = forms.CharField(
-        required=True,
-        help_text="Enter your tax ID number for verification",
-        widget=forms.TextInput(attrs={
-            'class': 'form-control',
-            'placeholder': 'Tax ID Number'
-        })
-    )
+    
 
     class Meta:
         model = PropertyOwner
-        fields = ('company_name', 'tax_id')
+        fields = ('company_name',)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
